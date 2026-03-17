@@ -1,18 +1,18 @@
 """
 learning_curve_analysis.py
-논문 섹션 4: Learning Curve 분석 — 데이터셋 크기에 따른 성능 포화 검증.
+Paper Section 4: Learning Curve Analysis — Verifying performance saturation with respect to dataset size.
 
-훈련 셋 크기를 점진적으로 증가시키며 CatBoost(주 분류기)의
-Weighted F1, Macro F1, KEY Recall을 5-fold stratified CV로 측정한다.
+Gradually increases the training set size and measures the primary classifier
+(CatBoost)'s Weighted F1, Macro F1, and KEY Recall using 5-fold stratified CV.
 
-사용법:
+Usage:
   python learning_curve_analysis.py [dataset_path]
-  (기본값: dataset/crypto_features.csv)
+  (default: dataset/crypto_features.csv)
 
-출력:
-  1. 콘솔 테이블 (논문용 수치)
-  2. TikZ 좌표 (논문 Figure에 직접 삽입 가능)
-  3. 포화 분석 (마지막 3 구간의 ΔF1)
+Output:
+  1. Console table (numerical values for the paper)
+  2. TikZ coordinates (can be directly inserted into paper figures)
+  3. Saturation analysis (delta F1 over the last 3 intervals)
 """
 
 import sys
@@ -26,12 +26,12 @@ from scipy import stats
 
 CLASSES = ['KEY', 'IV', 'CIPHERTEXT', 'PLAINTEXT', 'NON_CRYPTO']
 
-# 학습 곡선에 사용할 훈련 셋 크기 (10개 단계)
+# Training set sizes used for the learning curve (10 steps)
 TRAIN_SIZES = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]
 
 
 def load_data(csv_path):
-    """CSV 데이터셋 로드."""
+    """Load the CSV dataset."""
     df = pd.read_csv(csv_path)
     X = df.iloc[:, :10].values.astype(np.float64)
     y_str = df['label'].values
@@ -42,7 +42,7 @@ def load_data(csv_path):
 
 
 def make_catboost():
-    """논문 Table 5 최적 하이퍼파라미터의 CatBoost 모델 생성."""
+    """Create a CatBoost model with the optimal hyperparameters from paper Table 5."""
     return CatBoostClassifier(
         iterations=1000,
         depth=9,
@@ -59,11 +59,11 @@ def make_catboost():
 
 def run_learning_curve(X, y, le, train_sizes=TRAIN_SIZES, n_folds=5):
     """
-    각 train_size에서 5-fold stratified CV를 수행하고
-    Weighted F1, Macro F1, KEY Recall을 반환한다.
+    Perform 5-fold stratified CV at each train_size and return
+    Weighted F1, Macro F1, and KEY Recall.
 
-    train_size가 전체 데이터보다 작을 경우, 각 fold 내에서
-    stratified subsampling으로 축소한다.
+    When train_size is smaller than the full dataset, stratified
+    subsampling is applied within each fold to reduce the training set.
     """
     skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
     key_idx = le.transform(['KEY'])[0]
@@ -79,7 +79,7 @@ def run_learning_curve(X, y, le, train_sizes=TRAIN_SIZES, n_folds=5):
             X_tr_full, X_te = X[train_idx], X[test_idx]
             y_tr_full, y_te = y[train_idx], y[test_idx]
 
-            # 전체 데이터 사용 시 그대로, 아닐 경우 stratified subsampling
+            # Use full data as-is; otherwise apply stratified subsampling
             if size >= len(y_tr_full):
                 X_tr, y_tr = X_tr_full, y_tr_full
             else:
@@ -97,7 +97,7 @@ def run_learning_curve(X, y, le, train_sizes=TRAIN_SIZES, n_folds=5):
                 X_tr = X_tr_full[sub_idx]
                 y_tr = y_tr_full[sub_idx]
 
-            # CatBoost 학습
+            # Train CatBoost
             model = make_catboost()
             model.fit(X_tr, y_tr, verbose=0)
             y_pred = model.predict(X_te)
@@ -138,12 +138,12 @@ def run_learning_curve(X, y, le, train_sizes=TRAIN_SIZES, n_folds=5):
 
 
 def saturation_analysis(results):
-    """마지막 3~4 구간에서의 ΔF1 변화량 분석으로 포화 여부 판정."""
+    """Analyze saturation by examining the delta F1 changes over the last 3-4 intervals."""
     print("\n" + "=" * 70)
-    print("  포화 분석 (Saturation Analysis)")
+    print("  Saturation Analysis")
     print("=" * 70)
 
-    # 연속 구간 간 delta
+    # Delta between consecutive intervals
     print(f"\n  {'Interval':<20s} {'ΔWF1':>8s} {'ΔMWF1':>8s}")
     print(f"  {'-'*40}")
     deltas_wf1 = []
@@ -156,36 +156,36 @@ def saturation_analysis(results):
         interval = f"{prev['size']}→{curr['size']}"
         print(f"  {interval:<20s} {d_wf1:>+7.2f} {d_mf1:>+7.2f}")
 
-    # 마지막 3 구간의 평균 delta
+    # Average delta over the last 3 intervals
     last_3_deltas = deltas_wf1[-3:]
     avg_delta = np.mean(last_3_deltas)
-    print(f"\n  마지막 3 구간 평균 ΔWF1: {avg_delta:+.2f} pp")
+    print(f"\n  Average ΔWF1 over the last 3 intervals: {avg_delta:+.2f} pp")
 
     if abs(avg_delta) < 0.5:
-        print("  → 포화 상태 확인: 마지막 3 구간 평균 변화 < 0.5 pp")
-        print("    (추가 데이터에 의한 성능 향상 여지가 제한적)")
+        print("  → Saturation confirmed: average change over the last 3 intervals < 0.5 pp")
+        print("    (Limited room for performance improvement with additional data)")
     elif abs(avg_delta) < 1.0:
-        print("  → 준-포화 상태: 마지막 3 구간 평균 변화 0.5~1.0 pp")
+        print("  → Near-saturation: average change over the last 3 intervals is 0.5–1.0 pp")
     else:
-        print("  → 미포화: 추가 데이터가 성능 향상에 기여할 가능성 있음")
+        print("  → Not saturated: additional data may still contribute to performance improvement")
 
     # Marginal gain analysis: last vs first half
     first_half_gain = results[len(results) // 2]['wf1_mean'] - results[0]['wf1_mean']
     second_half_gain = results[-1]['wf1_mean'] - results[len(results) // 2]['wf1_mean']
-    print(f"\n  전반부 총 gain (N={results[0]['size']}→{results[len(results)//2]['size']}): "
+    print(f"\n  First-half total gain (N={results[0]['size']}→{results[len(results)//2]['size']}): "
           f"+{first_half_gain:.2f} pp")
-    print(f"  후반부 총 gain (N={results[len(results)//2]['size']}→{results[-1]['size']}): "
+    print(f"  Second-half total gain (N={results[len(results)//2]['size']}→{results[-1]['size']}): "
           f"+{second_half_gain:.2f} pp")
     ratio = second_half_gain / first_half_gain if first_half_gain > 0 else 0
-    print(f"  후반부/전반부 비율: {ratio:.2f} (1.0 미만이면 수확 체감)")
+    print(f"  Second-half/first-half ratio: {ratio:.2f} (below 1.0 indicates diminishing returns)")
 
     return avg_delta, first_half_gain, second_half_gain
 
 
 def generate_tikz_coordinates(results):
-    """논문 Figure에 삽입할 TikZ 좌표 문자열을 생성."""
+    """Generate TikZ coordinate strings for insertion into paper figures."""
     print("\n" + "=" * 70)
-    print("  TikZ 좌표 (논문 Figure 삽입용)")
+    print("  TikZ Coordinates (for paper figure insertion)")
     print("=" * 70)
 
     # Weighted F1
@@ -227,9 +227,9 @@ def generate_tikz_coordinates(results):
 
 
 def print_paper_table(results):
-    """논문 삽입용 테이블 출력."""
+    """Print a table formatted for paper insertion."""
     print("\n" + "=" * 70)
-    print("  논문용 Learning Curve 테이블")
+    print("  Learning Curve Table (for paper)")
     print("=" * 70)
 
     print(f"\n  {'N':>6s} {'WF1 Mean':>10s} {'WF1 SD':>8s} {'MF1 Mean':>10s} "
@@ -245,14 +245,14 @@ def print_paper_table(results):
 
 def main():
     csv_path = sys.argv[1] if len(sys.argv) > 1 else 'dataset/crypto_features.csv'
-    print(f"데이터셋: {csv_path}")
+    print(f"Dataset: {csv_path}")
 
     X, y, le = load_data(csv_path)
-    print(f"총 표본: {len(y)}")
-    print(f"클래스 분포: {dict(zip(*np.unique(le.inverse_transform(y), return_counts=True)))}")
+    print(f"Total samples: {len(y)}")
+    print(f"Class distribution: {dict(zip(*np.unique(le.inverse_transform(y), return_counts=True)))}")
 
     print("\n" + "=" * 70)
-    print("  Learning Curve 분석 (CatBoost, 5-fold stratified CV)")
+    print("  Learning Curve Analysis (CatBoost, 5-fold stratified CV)")
     print("=" * 70)
 
     results = run_learning_curve(X, y, le)
@@ -262,7 +262,7 @@ def main():
     generate_tikz_coordinates(results)
 
     print("\n" + "=" * 70)
-    print("  완료")
+    print("  Done")
     print("=" * 70)
 
 

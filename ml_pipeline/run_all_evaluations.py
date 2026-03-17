@@ -1,14 +1,14 @@
 """
 run_all_evaluations.py
-논문의 모든 성능 수치를 재생성하는 종합 평가 스크립트.
+Comprehensive evaluation script that regenerates all performance metrics from the paper.
 
-출력:
-  1. 단일 분할 (60/20/20) 성능 - tab:performance, tab:class_performance, tab:confusion
-  2. 계층적 5-겹 교차 검증 - tab:kfold
-  3. 10회 반복 무작위 분할 - subsec:results_stats
+Outputs:
+  1. Single split (60/20/20) performance - tab:performance, tab:class_performance, tab:confusion
+  2. Stratified 5-fold cross-validation - tab:kfold
+  3. 10-repeat random split - subsec:results_stats
   4. LOLO CV - tab:lolo
-  5. 모델 간 쌍별 t-검정 - tab:pairwise
-  6. 휴리스틱 성능 비교
+  5. Pairwise t-tests between models - tab:pairwise
+  6. Heuristic performance comparison
 """
 
 import numpy as np
@@ -46,7 +46,7 @@ def load_data(csv_path):
 
 
 def make_models():
-    """3개 ML 모델 + 고정 하이퍼파라미터."""
+    """3 ML models with fixed hyperparameters."""
     xgb_model = xgb.XGBClassifier(
         n_estimators=200, max_depth=6, learning_rate=0.1,
         objective='multi:softprob', num_class=5,
@@ -65,7 +65,7 @@ def make_models():
 
 
 def heuristic_predict(X):
-    """휴리스틱 기반 예측."""
+    """Heuristic-based prediction."""
     preds = []
     for row in X:
         score = compute_heuristic_score(row)
@@ -75,11 +75,11 @@ def heuristic_predict(X):
 
 
 # ═══════════════════════════════════════════════════════════
-# 1. 단일 분할 (60/20/20)
+# 1. Single Split (60/20/20)
 # ═══════════════════════════════════════════════════════════
 def run_single_split(X, y, le):
     print("\n" + "="*70)
-    print("  1. 단일 분할 (60/20/20)")
+    print("  1. Single Split (60/20/20)")
     print("="*70)
 
     X_train, X_temp, y_train, y_temp = train_test_split(
@@ -185,11 +185,11 @@ def run_single_split(X, y, le):
 
 
 # ═══════════════════════════════════════════════════════════
-# 2. 계층적 5-겹 교차 검증
+# 2. Stratified 5-Fold Cross-Validation
 # ═══════════════════════════════════════════════════════════
 def run_5fold_cv(X, y, le):
     print("\n" + "="*70)
-    print("  2. 계층적 5-겹 교차 검증")
+    print("  2. Stratified 5-Fold Cross-Validation")
     print("="*70)
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -265,11 +265,11 @@ def run_5fold_cv(X, y, le):
 
 
 # ═══════════════════════════════════════════════════════════
-# 3. 10회 반복 무작위 분할
+# 3. 10-Repeat Random Split
 # ═══════════════════════════════════════════════════════════
 def run_10repeat(X, y):
     print("\n" + "="*70)
-    print("  3. 10회 반복 무작위 분할")
+    print("  3. 10-Repeat Random Split")
     print("="*70)
 
     repeat_results = {name: [] for name in ['XGBoost', 'RandomForest', 'MLP', 'Heuristic']}
@@ -366,11 +366,11 @@ def run_lolo_cv(X, y, le, library):
 
 
 # ═══════════════════════════════════════════════════════════
-# 5. 쌍별 t-검정
+# 5. Pairwise t-tests
 # ═══════════════════════════════════════════════════════════
 def run_pairwise_tests(fold_results):
     print("\n" + "="*70)
-    print("  5. 쌍별 t-검정 (5-Fold CV)")
+    print("  5. Pairwise t-tests (5-Fold CV)")
     print("="*70)
 
     pairs = [
@@ -399,11 +399,11 @@ def run_pairwise_tests(fold_results):
 
 
 # ═══════════════════════════════════════════════════════════
-# 6. Baseline 재현
+# 6. Baseline Reproduction
 # ═══════════════════════════════════════════════════════════
 def run_baselines(X, y, le):
     print("\n" + "="*70)
-    print("  6. Baseline 재현 (Entropy-only, Entropy+Length)")
+    print("  6. Baseline Reproduction (Entropy-only, Entropy+Length)")
     print("="*70)
 
     X_train, X_temp, y_train, y_temp = train_test_split(
@@ -411,7 +411,7 @@ def run_baselines(X, y, le):
     X_val, X_test, y_val, y_test = train_test_split(
         X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp)
 
-    # Entropy-only (F1만)
+    # Entropy-only (F1 only)
     X_tr_e = X_train[:, [0]]
     X_te_e = X_test[:, [0]]
     X_va_e = X_val[:, [0]]
@@ -449,11 +449,11 @@ def run_baselines(X, y, le):
 
 
 # ═══════════════════════════════════════════════════════════
-# 7. 3특징 vs 10특징 비교
+# 7. 3-Feature vs 10-Feature Comparison
 # ═══════════════════════════════════════════════════════════
 def run_3feat_vs_10feat(X, y):
     print("\n" + "="*70)
-    print("  7. 3특징(F1,F3,F6) vs 10특징 비교 (5-fold CV)")
+    print("  7. 3-Feature (F1,F3,F6) vs 10-Feature Comparison (5-fold CV)")
     print("="*70)
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -464,7 +464,7 @@ def run_3feat_vs_10feat(X, y):
         X_tr, X_te = X[train_idx], X[test_idx]
         y_tr, y_te = y[train_idx], y[test_idx]
 
-        # 10특징
+        # 10 features
         m10 = xgb.XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.1,
                                   objective='multi:softprob', num_class=5,
                                   eval_metric='mlogloss', use_label_encoder=False,
@@ -472,7 +472,7 @@ def run_3feat_vs_10feat(X, y):
         m10.fit(X_tr, y_tr, eval_set=[(X_te, y_te)], verbose=False)
         scores_10.append(f1_score(y_te, m10.predict(X_te), average='weighted', zero_division=0) * 100)
 
-        # 3특징 (F1=entropy, F3=length, F6=region → indices 0, 2, 5)
+        # 3 features (F1=entropy, F3=length, F6=region -> indices 0, 2, 5)
         m3 = xgb.XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.1,
                                  objective='multi:softprob', num_class=5,
                                  eval_metric='mlogloss', use_label_encoder=False,
@@ -489,8 +489,8 @@ def run_3feat_vs_10feat(X, y):
     delta = mean_10 - mean_3
     t_stat, p_val = stats.ttest_rel(scores_10, scores_3)
 
-    print(f"  3특징: {mean_3:.2f}% ± {std_3:.2f}%")
-    print(f"  10특징: {mean_10:.2f}% ± {std_10:.2f}%")
+    print(f"  3 features: {mean_3:.2f}% ± {std_3:.2f}%")
+    print(f"  10 features: {mean_10:.2f}% ± {std_10:.2f}%")
     print(f"  ΔF1 = +{delta:.2f}%p, t={t_stat:.2f}, p={p_val:.3f}")
 
     return {
@@ -505,42 +505,42 @@ def run_3feat_vs_10feat(X, y):
 # ═══════════════════════════════════════════════════════════
 if __name__ == '__main__':
     csv_path = sys.argv[1] if len(sys.argv) > 1 else 'dataset/crypto_features.csv'
-    print(f"데이터셋: {csv_path}")
+    print(f"Dataset: {csv_path}")
 
     X, y, le, library = load_data(csv_path)
-    print(f"총 표본: {len(y)}")
+    print(f"Total samples: {len(y)}")
 
-    # 1. 단일 분할
+    # 1. Single split
     single_results, y_test_single, n_test = run_single_split(X, y, le)
 
     # 2. 5-fold CV
     fold_results, fold_results_macro, cv_means, per_class_f1 = run_5fold_cv(X, y, le)
 
-    # 3. 10회 반복
+    # 3. 10-repeat
     repeat_results = run_10repeat(X, y)
 
     # 4. LOLO CV
     if library is not None:
         lolo_results, lolo_details = run_lolo_cv(X, y, le, library)
     else:
-        print("\n  LOLO CV: library 열 없음, 건너뜀")
+        print("\n  LOLO CV: library column not found, skipping")
         lolo_results, lolo_details = None, None
 
-    # 5. 쌍별 t-검정
+    # 5. Pairwise t-tests
     pairwise_results = run_pairwise_tests(fold_results)
 
     # 6. Baselines
     baselines = run_baselines(X, y, le)
 
-    # 7. 3특징 vs 10특징
+    # 7. 3-feature vs 10-feature
     feat_comparison = run_3feat_vs_10feat(X, y)
 
-    # ── 최종 요약 ──
+    # -- Final Summary --
     print("\n" + "="*70)
-    print("  최종 요약 (논문 수치 갱신용)")
+    print("  Final Summary (for updating paper metrics)")
     print("="*70)
 
-    print(f"\n  단일 분할 (n_test={n_test}):")
+    print(f"\n  Single split (n_test={n_test}):")
     for name in ['XGBoost', 'RandomForest', 'MLP', 'Heuristic']:
         r = single_results[name]
         print(f"    {name}: Prec={r['prec']:.1%} Rec={r['rec']:.1%} F1w={r['f1w']:.1%} F1m={r['f1m']:.1%}")
@@ -550,7 +550,7 @@ if __name__ == '__main__':
         m, s = cv_means[name]
         print(f"    {name}: {m:.2f}% ± {s:.2f}%")
 
-    print(f"\n  10회 반복:")
+    print(f"\n  10-repeat:")
     for name in ['XGBoost', 'RandomForest', 'MLP', 'Heuristic']:
         scores = repeat_results[name]
         print(f"    {name}: {np.mean(scores):.2f}% ± {np.std(scores, ddof=1):.2f}%")
