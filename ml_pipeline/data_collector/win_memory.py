@@ -1,9 +1,9 @@
 """
 win_memory.py
-Windows 프로세스 메모리 읽기 및 스캔 유틸리티.
+Windows process memory reading and scanning utility.
 
-ReadProcessMemory / VirtualQueryEx 래퍼를 제공하여
-자체 프로세스 또는 외부 프로세스의 메모리를 분석한다.
+Provides wrappers for ReadProcessMemory / VirtualQueryEx to analyze
+memory of the current process or external processes.
 """
 
 import ctypes
@@ -14,7 +14,7 @@ from typing import List, Optional, Tuple
 
 kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 
-# ─── 상수 ───
+# ─── Constants ───
 PROCESS_VM_READ = 0x0010
 PROCESS_QUERY_INFORMATION = 0x0400
 MEM_COMMIT = 0x1000
@@ -51,7 +51,7 @@ class MEMORY_BASIC_INFORMATION(ctypes.Structure):
     ]
 
 
-# ─── Windows API 프로토타입 ───
+# ─── Windows API Prototypes ───
 kernel32.OpenProcess.restype = wt.HANDLE
 kernel32.OpenProcess.argtypes = [wt.DWORD, wt.BOOL, wt.DWORD]
 
@@ -74,23 +74,23 @@ kernel32.GetCurrentProcess.restype = wt.HANDLE
 kernel32.GetCurrentProcess.argtypes = []
 
 
-# ─── 메모리 영역 유형 판별 ───
-# 논문 F6: 0=Unknown, 1=DLL Data, 2=Stack/Heap(Private), 3=Other
+# ─── Memory Region Type Classification ───
+# Paper F6: 0=Unknown, 1=DLL Data, 2=Stack/Heap(Private), 3=Other
 
 def classify_region_type(mbi: MEMORY_BASIC_INFORMATION) -> int:
-    """MEMORY_BASIC_INFORMATION으로부터 논문의 메모리 영역 유형(F6)을 판별."""
+    """Classify the memory region type (F6) as defined in the paper from MEMORY_BASIC_INFORMATION."""
     if mbi.Type == MEM_IMAGE:
-        return 1    # DLL/EXE 이미지 영역 → DLL Data
+        return 1    # DLL/EXE image region -> DLL Data
     elif mbi.Type == MEM_PRIVATE:
         return 2    # Stack/Heap (Private)
     elif mbi.Type == MEM_MAPPED:
-        return 3    # Mapped Memory → Other
+        return 3    # Mapped Memory -> Other
     else:
         return 0    # Unknown
 
 
 def is_readable(mbi: MEMORY_BASIC_INFORMATION) -> bool:
-    """해당 영역이 읽기 가능한지 확인."""
+    """Check whether the given memory region is readable."""
     if mbi.State != MEM_COMMIT:
         return False
     if mbi.Protect & PAGE_GUARD:
@@ -100,10 +100,10 @@ def is_readable(mbi: MEMORY_BASIC_INFORMATION) -> bool:
     return (mbi.Protect & 0xFF) in READABLE_PROTECTIONS
 
 
-# ─── 메모리 영역 열거 ───
+# ─── Memory Region Enumeration ───
 
 class MemoryRegion:
-    """프로세스 메모리 영역 정보."""
+    """Process memory region information."""
     __slots__ = ('base', 'size', 'protect', 'mem_type', 'region_type')
 
     def __init__(self, base: int, size: int, protect: int,
@@ -112,7 +112,7 @@ class MemoryRegion:
         self.size = size
         self.protect = protect
         self.mem_type = mem_type
-        self.region_type = region_type     # 논문 F6 값
+        self.region_type = region_type     # Paper F6 value
 
     def __repr__(self):
         type_names = {0: 'Unknown', 1: 'DLL', 2: 'Private', 3: 'Other'}
@@ -122,7 +122,7 @@ class MemoryRegion:
 
 def enumerate_regions(handle: wt.HANDLE,
                       max_addr: int = 0x7FFFFFFFFFFF) -> List[MemoryRegion]:
-    """프로세스의 읽기 가능한 메모리 영역을 열거한다."""
+    """Enumerate readable memory regions of a process."""
     regions = []
     addr = 0
     mbi = MEMORY_BASIC_INFORMATION()
@@ -155,7 +155,7 @@ def enumerate_regions(handle: wt.HANDLE,
 
 
 def read_memory(handle: wt.HANDLE, address: int, size: int) -> Optional[bytes]:
-    """프로세스 메모리를 읽는다. 실패 시 None 반환."""
+    """Read process memory. Returns None on failure."""
     buf = (ctypes.c_ubyte * size)()
     bytes_read = ctypes.c_size_t(0)
     ok = kernel32.ReadProcessMemory(
@@ -167,16 +167,16 @@ def read_memory(handle: wt.HANDLE, address: int, size: int) -> Optional[bytes]:
     return None
 
 
-# ─── 패턴 검색 ───
+# ─── Pattern Search ───
 
 def scan_for_pattern(handle: wt.HANDLE, pattern: bytes,
                      regions: Optional[List[MemoryRegion]] = None,
                      ) -> List[Tuple[int, int]]:
     """
-    프로세스 메모리에서 바이트 패턴을 검색한다.
+    Search for a byte pattern in process memory.
 
     Returns:
-        [(address, region_type), ...] 검색된 주소와 영역 유형 목록
+        [(address, region_type), ...] list of found addresses and their region types
     """
     if regions is None:
         regions = enumerate_regions(handle)
@@ -201,17 +201,17 @@ def scan_for_pattern(handle: wt.HANDLE, pattern: bytes,
 
 
 def read_own_memory(address: int, size: int) -> bytes:
-    """자체 프로세스 메모리를 직접 읽는다 (ctypes.string_at)."""
+    """Read current process memory directly (ctypes.string_at)."""
     return ctypes.string_at(address, size)
 
 
 def get_own_process_handle() -> wt.HANDLE:
-    """자체 프로세스 핸들을 반환한다."""
+    """Return the current process handle."""
     return kernel32.GetCurrentProcess()
 
 
 def get_region_type_at(handle: wt.HANDLE, address: int) -> int:
-    """특정 주소의 메모리 영역 유형(F6)을 반환한다."""
+    """Return the memory region type (F6) at a specific address."""
     mbi = MEMORY_BASIC_INFORMATION()
     ret = kernel32.VirtualQueryEx(handle, ctypes.c_void_p(address),
                                   ctypes.byref(mbi), ctypes.sizeof(mbi))
@@ -220,10 +220,10 @@ def get_region_type_at(handle: wt.HANDLE, address: int) -> int:
     return classify_region_type(mbi)
 
 
-# ─── 스냅샷 ───
+# ─── Snapshot ───
 
 class MemorySnapshot:
-    """특정 주소 목록의 메모리 상태 스냅샷."""
+    """Memory state snapshot for a list of specific addresses."""
 
     def __init__(self):
         self.entries = {}   # {address: bytes}
@@ -232,7 +232,7 @@ class MemorySnapshot:
     def capture(self, handle: wt.HANDLE,
                 addresses: List[Tuple[int, int]]):
         """
-        지정 주소 목록의 메모리를 캡처한다.
+        Capture memory at the specified list of addresses.
         addresses: [(address, size), ...]
         """
         import time
@@ -252,13 +252,13 @@ def take_snapshots(handle: wt.HANDLE,
                    count: int = 20,
                    interval_ms: int = 500) -> List[MemorySnapshot]:
     """
-    시계열 메모리 스냅샷을 수집한다.
+    Collect time-series memory snapshots.
 
     Args:
-        handle: 프로세스 핸들
-        addresses: [(address, size), ...] 캡처할 주소 목록
-        count: 스냅샷 수 (기본 20)
-        interval_ms: 캡처 주기 (밀리초)
+        handle: Process handle
+        addresses: [(address, size), ...] list of addresses to capture
+        count: Number of snapshots (default 20)
+        interval_ms: Capture interval in milliseconds
     """
     import time
     snapshots = []
@@ -272,7 +272,7 @@ def take_snapshots(handle: wt.HANDLE,
 
 
 def count_changes(snapshots: List[MemorySnapshot], address: int) -> int:
-    """스냅샷 간 해당 주소의 변경 횟수를 계산한다."""
+    """Count the number of changes at the given address across snapshots."""
     changes = 0
     prev = None
     for snap in snapshots:
@@ -285,11 +285,11 @@ def count_changes(snapshots: List[MemorySnapshot], address: int) -> int:
     return changes
 
 
-# ─── 단독 테스트 ───
+# ─── Standalone Test ───
 if __name__ == '__main__':
     h = get_own_process_handle()
     regions = enumerate_regions(h)
-    print(f"읽기 가능 메모리 영역: {len(regions)}개")
+    print(f"Readable memory regions: {len(regions)}")
 
     type_counts = {0: 0, 1: 0, 2: 0, 3: 0}
     total_size = 0
@@ -299,16 +299,16 @@ if __name__ == '__main__':
 
     type_names = {0: 'Unknown', 1: 'DLL/Image', 2: 'Private', 3: 'Other'}
     for t, c in sorted(type_counts.items()):
-        print(f"  {type_names[t]}: {c}개")
-    print(f"  총 메모리: {total_size / (1024*1024):.1f} MB")
+        print(f"  {type_names[t]}: {c}")
+    print(f"  Total memory: {total_size / (1024*1024):.1f} MB")
 
-    # 패턴 검색 테스트
-    test_pattern = b'\xDE\xAD\xBE\xEF' * 8   # 32바이트 테스트 패턴
+    # Pattern search test
+    test_pattern = b'\xDE\xAD\xBE\xEF' * 8   # 32-byte test pattern
     buf = (ctypes.c_ubyte * 32)(*test_pattern)
     buf_addr = ctypes.addressof(buf)
-    print(f"\n테스트 패턴 주소: 0x{buf_addr:X}")
+    print(f"\nTest pattern address: 0x{buf_addr:X}")
 
     found = scan_for_pattern(h, test_pattern, regions)
-    print(f"검색 결과: {len(found)}개 발견")
+    print(f"Search results: {len(found)} found")
     for addr, rtype in found:
-        print(f"  0x{addr:X} (영역 유형: {type_names[rtype]})")
+        print(f"  0x{addr:X} (region type: {type_names[rtype]})")
