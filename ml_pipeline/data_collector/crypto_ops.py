@@ -1,16 +1,16 @@
 """
 crypto_ops.py
-Per-library generation of key/IV/ciphertext/plaintext and memory address tracking.
+암호 라이브러리별 키/IV/암호문/평문 생성 및 메모리 주소 추적.
 
-Supported libraries:
-  1) cryptography (OpenSSL backend)
+지원 라이브러리:
+  1) cryptography (OpenSSL 백엔드)
   2) PyCryptodome
   3) Windows CNG (ctypes)
-  4) PyNaCl (libsodium backend)
-  5) pyaes (pure Python AES)
+  4) PyNaCl (libsodium 백엔드)
+  5) pyaes (순수 Python AES)
 
-Each function performs cryptographic operations using known key values
-and searches for the corresponding byte patterns in memory to return ground truth addresses.
+각 함수는 알려진(known) 키 값을 사용하여 암호 연산을 수행하고,
+메모리에서 해당 바이트 패턴을 검색하여 ground truth 주소를 반환한다.
 """
 
 import os
@@ -32,20 +32,20 @@ from win_memory import (
 
 @dataclass
 class CryptoSample:
-    """Collected cryptographic data sample."""
+    """수집된 암호 데이터 표본."""
     label: str              # KEY / IV / CIPHERTEXT / PLAINTEXT / NON_CRYPTO
-    data: bytes             # actual byte data
-    address: int            # memory address
-    region_type: int        # 0-3 (paper F6)
-    algorithm: str          # e.g.: AES-256-CBC
-    library: str            # e.g.: OpenSSL
-    description: str = ""   # additional description
+    data: bytes             # 실제 바이트 데이터
+    address: int            # 메모리 주소
+    region_type: int        # 0-3 (논문 F6)
+    algorithm: str          # 예: AES-256-CBC
+    library: str            # 예: OpenSSL
+    description: str = ""   # 추가 설명
 
 
-# ─── Common library helpers ───
+# ─── 라이브러리 공용 도우미 ───
 
 def _keep_alive_list():
-    """Reference storage list to prevent garbage collection."""
+    """GC 방지용 참조 보관 리스트."""
     if not hasattr(_keep_alive_list, '_refs'):
         _keep_alive_list._refs = []
     return _keep_alive_list._refs
@@ -53,8 +53,8 @@ def _keep_alive_list():
 
 def _pin_bytes(data: bytes) -> Tuple[int, ctypes.Array]:
     """
-    Copy byte data into a ctypes buffer to pin its address.
-    Prevents address relocation due to garbage collection.
+    바이트 데이터를 ctypes 버퍼에 복사하여 주소를 고정한다.
+    GC로 인한 주소 이동을 방지.
     """
     buf = (ctypes.c_ubyte * len(data))(*data)
     _keep_alive_list().append(buf)  # prevent GC
@@ -64,13 +64,13 @@ def _pin_bytes(data: bytes) -> Tuple[int, ctypes.Array]:
 def _find_in_memory(pattern: bytes, handle=None, regions=None,
                     max_regions: int = 80,
                     ) -> List[Tuple[int, int]]:
-    """Search for a pattern in memory. Returns [(address, region_type), ...]
-    For performance, scans only Private (heap) regions first and limits the maximum number of regions."""
+    """메모리에서 패턴을 검색. [(address, region_type), ...]
+    성능을 위해 Private(힙) 영역만 우선 스캔하고 최대 영역 수를 제한한다."""
     if handle is None:
         handle = get_own_process_handle()
     if regions is None:
         all_regions = enumerate_regions(handle)
-        # Select only Private (heap/stack) regions (where keys typically reside)
+        # Private(힙/스택) 영역만 선별 (키가 주로 존재하는 곳)
         regions = [r for r in all_regions if r.region_type == 2]
         if len(regions) > max_regions:
             regions = regions[:max_regions]
@@ -78,15 +78,15 @@ def _find_in_memory(pattern: bytes, handle=None, regions=None,
 
 
 # ═══════════════════════════════════════════════════════════
-# 1. cryptography (OpenSSL backend)
+# 1. cryptography (OpenSSL 백엔드)
 # ═══════════════════════════════════════════════════════════
 
 def collect_openssl_aes(key_size: int = 32) -> List[CryptoSample]:
-    """Collect OpenSSL AES key/IV/ciphertext/plaintext."""
+    """OpenSSL AES 키/IV/암호문/평문 수집."""
     try:
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
     except ImportError:
-        print("  [Skipped] cryptography package not installed")
+        print("  [건너뜀] cryptography 패키지 미설치")
         return []
 
     samples = []
@@ -95,31 +95,31 @@ def collect_openssl_aes(key_size: int = 32) -> List[CryptoSample]:
 
     algo_name = f"AES-{key_size*8}-CBC"
 
-    # Generate known values
+    # 알려진 값 생성
     key_bytes = os.urandom(key_size)
     iv_bytes = os.urandom(16)
     plaintext = os.urandom(64)
 
-    # Pin to ctypes buffer (prevent GC)
+    # ctypes 버퍼에 고정 (GC 방지)
     key_addr, key_buf = _pin_bytes(key_bytes)
     iv_addr, iv_buf = _pin_bytes(iv_bytes)
     pt_addr, pt_buf = _pin_bytes(plaintext)
 
-    # Perform encryption
+    # 암호화 수행
     cipher = Cipher(algorithms.AES(key_bytes), modes.CBC(iv_bytes))
     encryptor = cipher.encryptor()
     ciphertext = encryptor.update(plaintext) + encryptor.finalize()
     ct_addr, ct_buf = _pin_bytes(ciphertext)
 
-    # ── KEY sample ──
-    # Pinned buffer address (definite ground truth)
+    # ── KEY 표본 ──
+    # 고정 버퍼 주소 (확실한 ground truth)
     samples.append(CryptoSample(
         label='KEY', data=key_bytes, address=key_addr,
         region_type=get_region_type_at(handle, key_addr),
         algorithm=algo_name, library='OpenSSL',
         description=f'pinned buffer {key_size}B'
     ))
-    # Search for additional copies in memory (library internal copies)
+    # 메모리 내 추가 사본 검색 (라이브러리 내부 복사본)
     found = _find_in_memory(key_bytes, handle, regions)
     for addr, rtype in found:
         if addr != key_addr:
@@ -129,7 +129,7 @@ def collect_openssl_aes(key_size: int = 32) -> List[CryptoSample]:
                 library='OpenSSL', description='library internal copy'
             ))
 
-    # ── IV sample ──
+    # ── IV 표본 ──
     samples.append(CryptoSample(
         label='IV', data=iv_bytes, address=iv_addr,
         region_type=get_region_type_at(handle, iv_addr),
@@ -144,7 +144,7 @@ def collect_openssl_aes(key_size: int = 32) -> List[CryptoSample]:
                 library='OpenSSL', description='library internal copy'
             ))
 
-    # ── PLAINTEXT sample ──
+    # ── PLAINTEXT 표본 ──
     samples.append(CryptoSample(
         label='PLAINTEXT', data=plaintext, address=pt_addr,
         region_type=get_region_type_at(handle, pt_addr),
@@ -152,7 +152,7 @@ def collect_openssl_aes(key_size: int = 32) -> List[CryptoSample]:
         description='input buffer 64B'
     ))
 
-    # ── CIPHERTEXT sample ──
+    # ── CIPHERTEXT 표본 ──
     samples.append(CryptoSample(
         label='CIPHERTEXT', data=ciphertext, address=ct_addr,
         region_type=get_region_type_at(handle, ct_addr),
@@ -160,14 +160,14 @@ def collect_openssl_aes(key_size: int = 32) -> List[CryptoSample]:
         description='output buffer'
     ))
 
-    # Retain references (prevent GC)
+    # 참조 유지 (GC 방지)
     _keep_alive_list().extend([cipher, encryptor, ciphertext])
 
     return samples
 
 
 def collect_openssl_chacha20() -> List[CryptoSample]:
-    """Collect OpenSSL ChaCha20-Poly1305 key/IV."""
+    """OpenSSL ChaCha20-Poly1305 키/IV 수집."""
     try:
         from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
     except ImportError:
@@ -215,7 +215,7 @@ def collect_openssl_chacha20() -> List[CryptoSample]:
 
 
 def collect_openssl_rsa(key_size: int = 2048) -> List[CryptoSample]:
-    """Collect OpenSSL RSA keys."""
+    """OpenSSL RSA 키 수집."""
     try:
         from cryptography.hazmat.primitives.asymmetric import rsa, padding
         from cryptography.hazmat.primitives import hashes, serialization
@@ -230,7 +230,7 @@ def collect_openssl_rsa(key_size: int = 2048) -> List[CryptoSample]:
         public_exponent=65537, key_size=key_size
     )
 
-    # Serialize to DER format to extract bytes
+    # DER 형식으로 직렬화하여 바이트 추출
     priv_der = private_key.private_bytes(
         serialization.Encoding.DER,
         serialization.PrivateFormat.PKCS8,
@@ -257,7 +257,7 @@ def collect_openssl_rsa(key_size: int = 2048) -> List[CryptoSample]:
         description=f'public key DER {len(pub_der)}B'
     ))
 
-    # Search for library internal key copies (partial matching for large keys)
+    # 라이브러리 내부 키 사본 검색 (큰 키는 부분 매칭)
     if len(priv_der) <= 512:
         for addr, rtype in _find_in_memory(priv_der, handle, regions):
             if addr != priv_addr:
@@ -272,7 +272,7 @@ def collect_openssl_rsa(key_size: int = 2048) -> List[CryptoSample]:
 
 
 def collect_openssl_ec() -> List[CryptoSample]:
-    """Collect OpenSSL ECDSA P-256 keys."""
+    """OpenSSL ECDSA P-256 키 수집."""
     try:
         from cryptography.hazmat.primitives.asymmetric import ec
         from cryptography.hazmat.primitives import serialization
@@ -289,7 +289,7 @@ def collect_openssl_ec() -> List[CryptoSample]:
         serialization.PrivateFormat.PKCS8,
         serialization.NoEncryption()
     )
-    # Uncompressed public key (65 bytes)
+    # 비압축 공개키 (65바이트)
     pub_bytes = private_key.public_key().public_bytes(
         serialization.Encoding.X962,
         serialization.PublicFormat.UncompressedPoint
@@ -316,7 +316,7 @@ def collect_openssl_ec() -> List[CryptoSample]:
 
 
 def collect_openssl_hmac() -> List[CryptoSample]:
-    """Collect OpenSSL HMAC-SHA256 key."""
+    """OpenSSL HMAC-SHA256 키 수집."""
     try:
         from cryptography.hazmat.primitives import hmac, hashes
     except ImportError:
@@ -359,7 +359,7 @@ def collect_openssl_hmac() -> List[CryptoSample]:
 
 
 def collect_openssl_aes_gcm() -> List[CryptoSample]:
-    """Collect OpenSSL AES-256-GCM samples."""
+    """OpenSSL AES-256-GCM 수집."""
     try:
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     except ImportError:
@@ -408,7 +408,7 @@ def collect_openssl_aes_gcm() -> List[CryptoSample]:
 
 
 def collect_openssl_ecdsa_p384() -> List[CryptoSample]:
-    """Collect OpenSSL ECDSA P-384 keys."""
+    """OpenSSL ECDSA P-384 키 수집."""
     try:
         from cryptography.hazmat.primitives.asymmetric import ec
         from cryptography.hazmat.primitives import serialization
@@ -451,7 +451,7 @@ def collect_openssl_ecdsa_p384() -> List[CryptoSample]:
 
 
 def collect_openssl_aes_ctr() -> List[CryptoSample]:
-    """Collect OpenSSL AES-256-CTR samples."""
+    """OpenSSL AES-256-CTR 수집."""
     try:
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
     except ImportError:
@@ -504,11 +504,11 @@ def collect_openssl_aes_ctr() -> List[CryptoSample]:
 # ═══════════════════════════════════════════════════════════
 
 def collect_pycryptodome_aes(key_size: int = 32) -> List[CryptoSample]:
-    """Collect PyCryptodome AES-CBC key/IV."""
+    """PyCryptodome AES-CBC 키/IV 수집."""
     try:
         from Crypto.Cipher import AES
     except ImportError:
-        print("  [Skipped] pycryptodome not installed")
+        print("  [건너뜀] pycryptodome 미설치")
         return []
 
     samples = []
@@ -518,7 +518,7 @@ def collect_pycryptodome_aes(key_size: int = 32) -> List[CryptoSample]:
 
     key_bytes = os.urandom(key_size)
     iv_bytes = os.urandom(16)
-    # Plaintext must be a multiple of 16 bytes
+    # 평문은 16바이트 배수
     plaintext = os.urandom(64)
 
     key_addr, _ = _pin_bytes(key_bytes)
@@ -534,7 +534,7 @@ def collect_pycryptodome_aes(key_size: int = 32) -> List[CryptoSample]:
         region_type=get_region_type_at(handle, key_addr),
         algorithm=algo_name, library='PyCryptodome',
     ))
-    # Library internal key copies
+    # 라이브러리 내부 키 사본
     for addr, rtype in _find_in_memory(key_bytes, handle, regions):
         if addr != key_addr:
             samples.append(CryptoSample(
@@ -564,7 +564,7 @@ def collect_pycryptodome_aes(key_size: int = 32) -> List[CryptoSample]:
 
 
 def collect_pycryptodome_aes_gcm() -> List[CryptoSample]:
-    """Collect PyCryptodome AES-256-GCM samples."""
+    """PyCryptodome AES-256-GCM 수집."""
     try:
         from Crypto.Cipher import AES
     except ImportError:
@@ -574,7 +574,7 @@ def collect_pycryptodome_aes_gcm() -> List[CryptoSample]:
     handle = get_own_process_handle()
 
     key_bytes = os.urandom(32)
-    nonce = os.urandom(12)     # GCM standard 12 bytes
+    nonce = os.urandom(12)     # GCM 표준 12바이트
     plaintext = os.urandom(48)
 
     key_addr, _ = _pin_bytes(key_bytes)
@@ -619,7 +619,7 @@ def collect_pycryptodome_aes_gcm() -> List[CryptoSample]:
 
 
 def collect_pycryptodome_des3() -> List[CryptoSample]:
-    """Collect PyCryptodome 3DES-CBC samples."""
+    """PyCryptodome 3DES-CBC 수집."""
     try:
         from Crypto.Cipher import DES3
     except ImportError:
@@ -630,7 +630,7 @@ def collect_pycryptodome_des3() -> List[CryptoSample]:
 
     key_bytes = DES3.adjust_key_parity(os.urandom(24))
     iv_bytes = os.urandom(8)
-    plaintext = os.urandom(32)  # multiple of 8 bytes
+    plaintext = os.urandom(32)  # 8바이트 배수
 
     key_addr, _ = _pin_bytes(key_bytes)
     iv_addr, _ = _pin_bytes(iv_bytes)
@@ -667,7 +667,7 @@ def collect_pycryptodome_des3() -> List[CryptoSample]:
 
 
 def collect_pycryptodome_rsa(key_size: int = 2048) -> List[CryptoSample]:
-    """Collect PyCryptodome RSA keys."""
+    """PyCryptodome RSA 키 수집."""
     try:
         from Crypto.PublicKey import RSA
     except ImportError:
@@ -701,7 +701,7 @@ def collect_pycryptodome_rsa(key_size: int = 2048) -> List[CryptoSample]:
 
 
 def collect_pycryptodome_chacha20() -> List[CryptoSample]:
-    """Collect PyCryptodome ChaCha20 samples."""
+    """PyCryptodome ChaCha20 수집."""
     try:
         from Crypto.Cipher import ChaCha20
     except ImportError:
@@ -749,7 +749,7 @@ def collect_pycryptodome_chacha20() -> List[CryptoSample]:
 
 
 def collect_pycryptodome_salsa20() -> List[CryptoSample]:
-    """Collect PyCryptodome Salsa20 samples."""
+    """PyCryptodome Salsa20 수집."""
     try:
         from Crypto.Cipher import Salsa20
     except ImportError:
@@ -797,7 +797,7 @@ def collect_pycryptodome_salsa20() -> List[CryptoSample]:
 
 
 def collect_pycryptodome_aes_ctr() -> List[CryptoSample]:
-    """Collect PyCryptodome AES-256-CTR samples."""
+    """PyCryptodome AES-256-CTR 수집."""
     try:
         from Crypto.Cipher import AES
     except ImportError:
@@ -849,11 +849,11 @@ def collect_pycryptodome_aes_ctr() -> List[CryptoSample]:
 # ═══════════════════════════════════════════════════════════
 
 def collect_cng_aes(key_size: int = 32) -> List[CryptoSample]:
-    """Collect Windows CNG BCrypt AES keys."""
+    """Windows CNG BCrypt AES 키 수집."""
     try:
         bcrypt = ctypes.WinDLL('bcrypt')
     except OSError:
-        print("  [Skipped] Failed to load bcrypt.dll")
+        print("  [건너뜀] bcrypt.dll 로드 실패")
         return []
 
     samples = []
@@ -869,10 +869,10 @@ def collect_cng_aes(key_size: int = 32) -> List[CryptoSample]:
         None, 0
     )
     if status != 0:
-        print(f"  [CNG Error] BCryptOpenAlgorithmProvider: 0x{status:08X}")
+        print(f"  [CNG 오류] BCryptOpenAlgorithmProvider: 0x{status:08X}")
         return []
 
-    # Set chaining mode (CBC)
+    # 체이닝 모드 설정 (CBC)
     mode = 'ChainingModeCBC'
     mode_buf = ctypes.create_unicode_buffer(mode)
     bcrypt.BCryptSetProperty(
@@ -883,7 +883,7 @@ def collect_cng_aes(key_size: int = 32) -> List[CryptoSample]:
         0
     )
 
-    # Generate key
+    # 키 생성
     key_bytes = os.urandom(key_size)
     key_addr, key_buf = _pin_bytes(key_bytes)
 
@@ -903,18 +903,18 @@ def collect_cng_aes(key_size: int = 32) -> List[CryptoSample]:
         key_buf, key_size, 0
     )
     if status != 0:
-        print(f"  [CNG Error] BCryptGenerateSymmetricKey: 0x{status:08X}")
+        print(f"  [CNG 오류] BCryptGenerateSymmetricKey: 0x{status:08X}")
         bcrypt.BCryptCloseAlgorithmProvider(hAlg, 0)
         return []
 
-    # ── KEY sample ──
+    # ── KEY 표본 ──
     samples.append(CryptoSample(
         label='KEY', data=key_bytes, address=key_addr,
         region_type=get_region_type_at(handle, key_addr),
         algorithm=algo_name, library='Windows CNG',
         description=f'pinned key {key_size}B'
     ))
-    # Search for CNG internal key copies
+    # CNG 내부 키 사본 검색
     for addr, rtype in _find_in_memory(key_bytes, handle, regions):
         if addr != key_addr:
             samples.append(CryptoSample(
@@ -923,13 +923,13 @@ def collect_cng_aes(key_size: int = 32) -> List[CryptoSample]:
                 library='Windows CNG', description='CNG internal copy'
             ))
 
-    # Encryption
+    # 암호화
     iv_bytes = os.urandom(16)
     iv_addr, iv_buf = _pin_bytes(iv_bytes)
     plaintext = os.urandom(64)
     pt_addr, pt_buf = _pin_bytes(plaintext)
 
-    # Copy IV to a separate buffer (CNG modifies the IV in place)
+    # IV를 별도 버퍼로 복사 (CNG가 IV를 수정함)
     iv_copy = (ctypes.c_ubyte * 16)(*iv_bytes)
 
     ct_len = wt.DWORD()
@@ -940,7 +940,7 @@ def collect_cng_aes(key_size: int = 32) -> List[CryptoSample]:
     )
     ct_buf = (ctypes.c_ubyte * ct_len.value)()
 
-    # Reset IV
+    # IV 재설정
     iv_copy2 = (ctypes.c_ubyte * 16)(*iv_bytes)
     status = bcrypt.BCryptEncrypt(
         hKey, pt_buf, len(plaintext),
@@ -967,7 +967,7 @@ def collect_cng_aes(key_size: int = 32) -> List[CryptoSample]:
             algorithm=algo_name, library='Windows CNG',
         ))
 
-    # Cleanup
+    # 정리
     bcrypt.BCryptDestroyKey(hKey)
     bcrypt.BCryptCloseAlgorithmProvider(hAlg, 0)
 
@@ -976,16 +976,16 @@ def collect_cng_aes(key_size: int = 32) -> List[CryptoSample]:
 
 
 # ═══════════════════════════════════════════════════════════
-# 4. PyNaCl (libsodium backend)
+# 4. PyNaCl (libsodium 백엔드)
 # ═══════════════════════════════════════════════════════════
 
 def collect_pynacl_secretbox() -> List[CryptoSample]:
-    """Collect PyNaCl SecretBox (XSalsa20-Poly1305) samples."""
+    """PyNaCl SecretBox (XSalsa20-Poly1305) 수집."""
     try:
         from nacl.secret import SecretBox
         from nacl.utils import random as nacl_random
     except ImportError:
-        print("  [Skipped] pynacl not installed")
+        print("  [건너뜀] pynacl 미설치")
         return []
 
     samples = []
@@ -1031,7 +1031,7 @@ def collect_pynacl_secretbox() -> List[CryptoSample]:
 
 
 def collect_pynacl_sealedbox() -> List[CryptoSample]:
-    """Collect PyNaCl SealedBox (Curve25519 public key encryption) samples."""
+    """PyNaCl SealedBox (Curve25519 공개키 암호화) 수집."""
     try:
         from nacl.public import PrivateKey, SealedBox
     except ImportError:
@@ -1082,7 +1082,7 @@ def collect_pynacl_sealedbox() -> List[CryptoSample]:
 
 
 def collect_pynacl_ed25519() -> List[CryptoSample]:
-    """Collect PyNaCl Ed25519 signing keys."""
+    """PyNaCl Ed25519 서명키 수집."""
     try:
         from nacl.signing import SigningKey
     except ImportError:
@@ -1134,7 +1134,7 @@ def collect_pynacl_ed25519() -> List[CryptoSample]:
 
 
 def collect_pynacl_box() -> List[CryptoSample]:
-    """Collect PyNaCl Box (Curve25519 key exchange + XSalsa20-Poly1305) samples."""
+    """PyNaCl Box (Curve25519 키 교환 + XSalsa20-Poly1305) 수집."""
     try:
         from nacl.public import PrivateKey, Box
     except ImportError:
@@ -1197,7 +1197,7 @@ def collect_pynacl_box() -> List[CryptoSample]:
 
 
 def collect_pynacl_generichash() -> List[CryptoSample]:
-    """Collect PyNaCl BLAKE2b keyed hash samples."""
+    """PyNaCl BLAKE2b 키 해시 수집."""
     try:
         from nacl.hash import blake2b
         from nacl.encoding import RawEncoder
@@ -1238,15 +1238,15 @@ def collect_pynacl_generichash() -> List[CryptoSample]:
 
 
 # ═══════════════════════════════════════════════════════════
-# 5. pyaes (pure Python AES implementation)
+# 5. pyaes (순수 Python AES 구현)
 # ═══════════════════════════════════════════════════════════
 
 def collect_pyaes_ctr(key_size: int = 32) -> List[CryptoSample]:
-    """Collect pyaes AES-CTR samples (pure Python implementation)."""
+    """pyaes AES-CTR 수집 (순수 Python 구현)."""
     try:
         import pyaes
     except ImportError:
-        print("  [Skipped] pyaes not installed")
+        print("  [건너뜀] pyaes 미설치")
         return []
 
     samples = []
@@ -1293,7 +1293,7 @@ def collect_pyaes_ctr(key_size: int = 32) -> List[CryptoSample]:
 
 
 def collect_pyaes_cbc(key_size: int = 32) -> List[CryptoSample]:
-    """Collect pyaes AES-CBC samples (pure Python implementation)."""
+    """pyaes AES-CBC 수집 (순수 Python 구현)."""
     try:
         import pyaes
     except ImportError:
@@ -1305,7 +1305,7 @@ def collect_pyaes_cbc(key_size: int = 32) -> List[CryptoSample]:
 
     key_bytes = os.urandom(key_size)
     iv_bytes = os.urandom(16)
-    plaintext = os.urandom(64)  # multiple of 16 bytes
+    plaintext = os.urandom(64)  # 16바이트 배수
 
     key_addr, _ = _pin_bytes(key_bytes)
     iv_addr, _ = _pin_bytes(iv_bytes)
@@ -1343,21 +1343,21 @@ def collect_pyaes_cbc(key_size: int = 32) -> List[CryptoSample]:
 
 
 # ═══════════════════════════════════════════════════════════
-# 6. NON_CRYPTO sample collection
+# 6. NON_CRYPTO 표본 수집
 # ═══════════════════════════════════════════════════════════
 
 def collect_non_crypto(count: int = 50,
                        crypto_patterns: Optional[List[bytes]] = None
                        ) -> List[CryptoSample]:
     """
-    Collect NON_CRYPTO samples from non-cryptographic memory regions.
+    비암호 메모리 영역에서 NON_CRYPTO 표본을 수집한다.
 
-    To ensure diverse entropy distributions:
-    - General heap data (low entropy)
-    - String data (medium entropy)
-    - Repeating patterns (very low entropy)
-    - Structs/pointers (low to medium entropy)
-    - Simulated compressed data (high entropy, induces false positives)
+    다양한 엔트로피 분포를 확보하기 위해:
+    - 일반 힙 데이터 (저엔트로피)
+    - 문자열 데이터 (중간 엔트로피)
+    - 반복 패턴 (매우 저엔트로피)
+    - 구조체/포인터 (저~중간 엔트로피)
+    - 압축 데이터 시뮬레이션 (고엔트로피, 위양성 유발)
     """
     if crypto_patterns is None:
         crypto_patterns = []
@@ -1366,11 +1366,11 @@ def collect_non_crypto(count: int = 50,
     handle = get_own_process_handle()
     regions = enumerate_regions(handle)
 
-    # (a) Random block sampling from process memory
+    # (a) 프로세스 메모리에서 랜덤 블록 샘플링
     import random
     random.seed(42)
 
-    # Select Private (heap) regions among readable regions
+    # 읽기 가능 영역 중 Private(힙) 영역 선택
     heap_regions = [r for r in regions if r.region_type == 2 and r.size >= 256]
     other_regions = [r for r in regions if r.region_type in (1, 3) and r.size >= 256]
     pool = heap_regions + other_regions
@@ -1391,7 +1391,7 @@ def collect_non_crypto(count: int = 50,
             continue
 
         offset = random.randint(0, region.size - size)
-        # 8-byte alignment
+        # 8바이트 정렬
         offset = (offset // 8) * 8
         addr = region.base + offset
 
@@ -1400,11 +1400,11 @@ def collect_non_crypto(count: int = 50,
         if data is None or len(data) < size:
             continue
 
-        # Exclude all-zero blocks
+        # 전부 0인 블록 제외
         if all(b == 0 for b in data):
             continue
 
-        # Check for overlap with known cryptographic patterns
+        # 알려진 암호 패턴과 겹치는지 확인
         is_crypto = False
         for pattern in crypto_patterns:
             if pattern in data or data in pattern:
@@ -1421,11 +1421,11 @@ def collect_non_crypto(count: int = 50,
         ))
         collected += 1
 
-    # (b) Intentional high-entropy non-crypto data (to induce false positives)
-    # Simulated compressed data
+    # (b) 의도적 고엔트로피 비암호 데이터 (위양성 유도용)
+    # 압축 데이터 시뮬레이션
     high_ent_count = min(count // 5, 20)
     for i in range(high_ent_count):
-        # High entropy but not completely random data
+        # 높은 엔트로피이지만 완전히 랜덤은 아닌 데이터
         size = random.choice([16, 32, 64])
         data = bytes([((i * 7 + j * 13 + j * j) % 256) for j in range(size)])
         addr, _ = _pin_bytes(data)
@@ -1436,7 +1436,7 @@ def collect_non_crypto(count: int = 50,
             description='high entropy non-crypto'
         ))
 
-    # (c) String data (medium entropy)
+    # (c) 문자열 데이터 (중간 엔트로피)
     string_samples = [
         b"The quick brown fox jumps over the lazy dog 1234567890!@#$",
         b"AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHH",
@@ -1459,11 +1459,11 @@ def collect_non_crypto(count: int = 50,
 
 
 # ═══════════════════════════════════════════════════════════
-# Overall collection orchestrator
+# 전체 수집 오케스트레이터
 # ═══════════════════════════════════════════════════════════
 
 ALL_COLLECTORS = [
-    # 1. cryptography (OpenSSL backend) — 10 collectors
+    # 1. cryptography (OpenSSL 백엔드) — 10개
     ("OpenSSL AES-128-CBC", lambda: collect_openssl_aes(16)),
     ("OpenSSL AES-192-CBC", lambda: collect_openssl_aes(24)),
     ("OpenSSL AES-256-CBC", lambda: collect_openssl_aes(32)),
@@ -1474,7 +1474,7 @@ ALL_COLLECTORS = [
     ("OpenSSL ECDSA-P256", collect_openssl_ec),
     ("OpenSSL ECDSA-P384", collect_openssl_ecdsa_p384),
     ("OpenSSL HMAC-SHA256", collect_openssl_hmac),
-    # 2. PyCryptodome — 9 collectors
+    # 2. PyCryptodome — 9개
     ("PyCryptodome AES-128-CBC", lambda: collect_pycryptodome_aes(16)),
     ("PyCryptodome AES-192-CBC", lambda: collect_pycryptodome_aes(24)),
     ("PyCryptodome AES-256-CBC", lambda: collect_pycryptodome_aes(32)),
@@ -1484,17 +1484,17 @@ ALL_COLLECTORS = [
     ("PyCryptodome ChaCha20", collect_pycryptodome_chacha20),
     ("PyCryptodome Salsa20", collect_pycryptodome_salsa20),
     ("PyCryptodome RSA-2048", lambda: collect_pycryptodome_rsa(2048)),
-    # 3. Windows CNG — 3 collectors
+    # 3. Windows CNG — 3개
     ("Windows CNG AES-128-CBC", lambda: collect_cng_aes(16)),
     ("Windows CNG AES-192-CBC", lambda: collect_cng_aes(24)),
     ("Windows CNG AES-256-CBC", lambda: collect_cng_aes(32)),
-    # 4. PyNaCl (libsodium) — 5 collectors
+    # 4. PyNaCl (libsodium) — 5개
     ("PyNaCl SecretBox", collect_pynacl_secretbox),
     ("PyNaCl SealedBox", collect_pynacl_sealedbox),
     ("PyNaCl Ed25519", collect_pynacl_ed25519),
     ("PyNaCl Box", collect_pynacl_box),
     ("PyNaCl BLAKE2b", collect_pynacl_generichash),
-    # 5. pyaes (pure Python) — 6 collectors
+    # 5. pyaes (순수 Python) — 6개
     ("pyaes AES-128-CTR", lambda: collect_pyaes_ctr(16)),
     ("pyaes AES-192-CTR", lambda: collect_pyaes_ctr(24)),
     ("pyaes AES-256-CTR", lambda: collect_pyaes_ctr(32)),
@@ -1507,17 +1507,17 @@ ALL_COLLECTORS = [
 def collect_all(repetitions: int = 5,
                 non_crypto_count: int = 50) -> List[CryptoSample]:
     """
-    Collect samples from all cryptographic libraries.
+    모든 암호 라이브러리에서 표본을 수집한다.
 
     Args:
-        repetitions: Number of times to run each collector (to generate diverse key values)
-        non_crypto_count: Number of NON_CRYPTO samples
+        repetitions: 각 수집기를 반복 실행할 횟수 (다양한 키 값 생성)
+        non_crypto_count: NON_CRYPTO 표본 수
     """
     all_samples = []
     crypto_patterns = []
 
     for rep in range(repetitions):
-        print(f"\n── Repetition {rep+1}/{repetitions} ──")
+        print(f"\n── 반복 {rep+1}/{repetitions} ──")
         for name, collector_fn in ALL_COLLECTORS:
             try:
                 samples = collector_fn()
@@ -1526,24 +1526,24 @@ def collect_all(repetitions: int = 5,
                     if s.label in ('KEY', 'IV'):
                         crypto_patterns.append(s.data)
                 if samples:
-                    print(f"  {name}: {len(samples)} samples collected")
+                    print(f"  {name}: {len(samples)}개 수집")
             except Exception as e:
-                print(f"  {name}: Error - {e}")
+                print(f"  {name}: 오류 - {e}")
 
-    # Collect NON_CRYPTO
-    print(f"\n── NON_CRYPTO collection (target: {non_crypto_count} samples) ──")
+    # NON_CRYPTO 수집
+    print(f"\n── NON_CRYPTO 수집 (목표: {non_crypto_count}개) ──")
     nc_samples = collect_non_crypto(non_crypto_count, crypto_patterns)
     all_samples.extend(nc_samples)
-    print(f"  NON_CRYPTO: {len(nc_samples)} samples collected")
+    print(f"  NON_CRYPTO: {len(nc_samples)}개 수집")
 
     return all_samples
 
 
 if __name__ == '__main__':
-    print("Cryptographic sample collection test")
+    print("암호 표본 수집 테스트")
     print("=" * 50)
     samples = collect_all(repetitions=1, non_crypto_count=10)
-    print(f"\nTotal collected: {len(samples)} samples")
+    print(f"\n총 수집: {len(samples)}개")
 
     label_counts = {}
     lib_counts = {}
@@ -1551,9 +1551,9 @@ if __name__ == '__main__':
         label_counts[s.label] = label_counts.get(s.label, 0) + 1
         lib_counts[s.library] = lib_counts.get(s.library, 0) + 1
 
-    print("\nBy class:")
+    print("\n클래스별:")
     for label, count in sorted(label_counts.items()):
         print(f"  {label}: {count}")
-    print("\nBy library:")
+    print("\n라이브러리별:")
     for lib, count in sorted(lib_counts.items()):
         print(f"  {lib}: {count}")
