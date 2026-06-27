@@ -1,0 +1,413 @@
+{
+  "csv": "dataset/real_crypto_features.csv",
+  "n_total": 8112,
+  "class_counts": {
+    "KEY": 3710,
+    "IV": 1082,
+    "CIPHERTEXT": 1329,
+    "PLAINTEXT": 1329,
+    "NON_CRYPTO": 662
+  },
+  "library_counts": {
+    "OpenSSL": 1369,
+    "PyCryptodome": 1382,
+    "PyNaCl": 1560,
+    "Windows CNG": 1699,
+    "memory": 637,
+    "pyaes": 1440,
+    "synthetic": 25
+  },
+  "single_split": {
+    "XGBoost": {
+      "W_F1": 85.84,
+      "M_F1": 84.48
+    },
+    "CatBoost": {
+      "W_F1": 80.79,
+      "M_F1": 81.61
+    },
+    "LightGBM": {
+      "W_F1": 86.33,
+      "M_F1": 85.08
+    },
+    "RandomForest": {
+      "W_F1": 85.99,
+      "M_F1": 84.44
+    },
+    "MLP": {
+      "W_F1": 84.16,
+      "M_F1": 81.76
+    }
+  },
+  "deployed_model": "XGBoost",
+  "per_class": {
+    "KEY": {
+      "precision": 87.6,
+      "recall": 96.5,
+      "f1": 91.9,
+      "n": 742
+    },
+    "IV": {
+      "precision": 83.8,
+      "recall": 64.5,
+      "f1": 72.9,
+      "n": 217
+    },
+    "CIPHERTEXT": {
+      "precision": 79.2,
+      "recall": 77.1,
+      "f1": 78.1,
+      "n": 266
+    },
+    "PLAINTEXT": {
+      "precision": 83.3,
+      "recall": 78.9,
+      "f1": 81.1,
+      "n": 266
+    },
+    "NON_CRYPTO": {
+      "precision": 100.0,
+      "recall": 97.0,
+      "f1": 98.5,
+      "n": 132
+    }
+  },
+  "binary_key": {
+    "precision": 87.6,
+    "recall": 96.5,
+    "f1": 91.9
+  },
+  "confusion_matrix_rownorm": [
+    [
+      0.965,
+      0.035,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.355,
+      0.645,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.071,
+      0.0,
+      0.771,
+      0.158,
+      0.0
+    ],
+    [
+      0.008,
+      0.0,
+      0.203,
+      0.789,
+      0.0
+    ],
+    [
+      0.023,
+      0.008,
+      0.0,
+      0.0,
+      0.97
+    ]
+  ],
+  "cv5": {
+    "XGBoost": [
+      86.1917327437338,
+      86.80313633504313,
+      84.46342202116513,
+      85.59606238173355,
+      86.48031575147165
+    ],
+    "CatBoost": [
+      80.44013608748087,
+      81.04635321830607,
+      80.66670917573185,
+      80.22558746137933,
+      81.25958629980585
+    ],
+    "LightGBM": [
+      86.553491071486,
+      86.9187280947166,
+      84.82841964144262,
+      85.83591293880453,
+      86.54563947999561
+    ],
+    "RandomForest": [
+      86.4919249957951,
+      86.97762058756814,
+      84.81335945459575,
+      85.96250439094851,
+      86.60140014795448
+    ],
+    "MLP": [
+      84.22966849692732,
+      83.8199495270256,
+      83.11309981581113,
+      84.35592678171253,
+      85.32710582157009
+    ]
+  },
+  "cv5_summary": {
+    "XGBoost": {
+      "mean": 85.91,
+      "sd": 0.92
+    },
+    "CatBoost": {
+      "mean": 80.73,
+      "sd": 0.43
+    },
+    "LightGBM": {
+      "mean": 86.14,
+      "sd": 0.83
+    },
+    "RandomForest": {
+      "mean": 86.17,
+      "sd": 0.84
+    },
+    "MLP": {
+      "mean": 84.17,
+      "sd": 0.81
+    }
+  },
+  "lolo": {
+    "XGBoost": {
+      "per_library": {
+        "OpenSSL": 91.4,
+        "PyCryptodome": 91.8,
+        "PyNaCl": 56.2,
+        "Windows CNG": 61.4,
+        "memory": 38.1,
+        "pyaes": 94.6,
+        "synthetic": 14.8
+      },
+      "mean": 64.0,
+      "sd": 30.6,
+      "real_library_mean": 79.08,
+      "real_library_sd": 18.64
+    },
+    "CatBoost": {
+      "per_library": {
+        "OpenSSL": 86.6,
+        "PyCryptodome": 86.2,
+        "PyNaCl": 58.3,
+        "Windows CNG": 54.1,
+        "memory": 67.2,
+        "pyaes": 85.0,
+        "synthetic": 21.4
+      },
+      "mean": 65.5,
+      "sd": 23.7,
+      "real_library_mean": 74.04,
+      "real_library_sd": 16.36
+    },
+    "LightGBM": {
+      "per_library": {
+        "OpenSSL": 91.4,
+        "PyCryptodome": 91.7,
+        "PyNaCl": 58.7,
+        "Windows CNG": 61.1,
+        "memory": 51.9,
+        "pyaes": 94.6,
+        "synthetic": 14.8
+      },
+      "mean": 66.3,
+      "sd": 28.9,
+      "real_library_mean": 79.5,
+      "real_library_sd": 17.96
+    },
+    "RandomForest": {
+      "per_library": {
+        "OpenSSL": 92.2,
+        "PyCryptodome": 91.8,
+        "PyNaCl": 58.5,
+        "Windows CNG": 64.1,
+        "memory": 47.6,
+        "pyaes": 94.6,
+        "synthetic": 33.3
+      },
+      "mean": 68.9,
+      "sd": 24.4,
+      "real_library_mean": 80.24,
+      "real_library_sd": 17.44
+    },
+    "MLP": {
+      "per_library": {
+        "OpenSSL": 88.8,
+        "PyCryptodome": 91.8,
+        "PyNaCl": 51.2,
+        "Windows CNG": 58.7,
+        "memory": 1.2,
+        "pyaes": 94.7,
+        "synthetic": 14.8
+      },
+      "mean": 57.3,
+      "sd": 37.8,
+      "real_library_mean": 77.04,
+      "real_library_sd": 20.45
+    }
+  },
+  "fraction_matched_midh": {
+    "model": "XGBoost",
+    "W_F1": 82.51,
+    "M_F1": 87.15,
+    "KEY_recall": 99.8,
+    "train_row_frac": 0.5982
+  },
+  "heuristic_sweep": {
+    "S<=1": {
+      "elimination_pct": 1.48,
+      "key_retention_pct": 100.0
+    },
+    "S<=2": {
+      "elimination_pct": 3.11,
+      "key_retention_pct": 98.95
+    },
+    "S<=3": {
+      "elimination_pct": 34.9,
+      "key_retention_pct": 81.35
+    }
+  },
+  "baselines": {
+    "Random": {
+      "W_F1": 21.45,
+      "M_F1": 16.97
+    },
+    "Majority": {
+      "W_F1": 28.69,
+      "M_F1": 12.55
+    },
+    "Entropy-only(F1)": {
+      "W_F1": 68.77,
+      "M_F1": 61.66
+    },
+    "Entropy+Length(F1,F3)": {
+      "W_F1": 75.73,
+      "M_F1": 71.27
+    },
+    "Heuristic-scoring": {
+      "W_F1": 3.13,
+      "M_F1": 4.33
+    }
+  },
+  "feature_importance_pct": {
+    "F1_entropy": 6.71,
+    "F2_chi_square": 4.63,
+    "F3_length": 24.63,
+    "F4_standard_key_len": 0.69,
+    "F5_standard_iv_len": 0.0,
+    "F6_memory_region": 47.91,
+    "F7_change_count": 9.93,
+    "F8_change_pattern": 0.0,
+    "F9_entropy_length_interaction": 5.49,
+    "F10_high_confidence_key": 0.0
+  },
+  "ablation_logo": {
+    "Full(10)": 85.91,
+    "Statistical": {
+      "W_F1": 85.88,
+      "delta": -0.03
+    },
+    "Structural": {
+      "W_F1": 85.51,
+      "delta": -0.4
+    },
+    "Contextual": {
+      "W_F1": 85.24,
+      "delta": -0.67
+    },
+    "Temporal": {
+      "W_F1": 80.58,
+      "delta": -5.33
+    },
+    "Derived": {
+      "W_F1": 85.92,
+      "delta": 0.02
+    }
+  },
+  "calibration_tiers": {
+    "ECE_pct": 1.49,
+    "tiers": {
+      "high(>=0.80)": {
+        "frac": 0.645,
+        "accuracy": 96.6
+      },
+      "medium(0.50-0.80)": {
+        "frac": 0.355,
+        "accuracy": 67.4
+      },
+      "low(<0.50)": {
+        "frac": 0.0,
+        "accuracy": null
+      }
+    }
+  },
+  "learning_curve": {
+    "10pct": 84.35,
+    "25pct": 85.46,
+    "50pct": 85.84,
+    "75pct": 85.86,
+    "100pct": 85.91
+  },
+  "three_class": {
+    "classes": [
+      "KEY",
+      "IV",
+      "OTHER"
+    ],
+    "per_class": {
+      "KEY": {
+        "precision": 87.1,
+        "recall": 95.1,
+        "f1": 90.9,
+        "n": 742
+      },
+      "IV": {
+        "precision": 78.2,
+        "recall": 61.3,
+        "f1": 68.7,
+        "n": 217
+      },
+      "OTHER": {
+        "precision": 100.0,
+        "recall": 96.7,
+        "f1": 98.3,
+        "n": 664
+      }
+    },
+    "W_F1": 90.98,
+    "M_F1": 85.99,
+    "cv5_WF1_mean": 91.29,
+    "cv5_WF1_sd": 1.07
+  },
+  "cv5_ttest_vs_deployed": {
+    "CatBoost": {
+      "delta": -5.18,
+      "t": -14.335,
+      "p": 0.0001
+    },
+    "LightGBM": {
+      "delta": 0.23,
+      "t": 3.726,
+      "p": 0.0204
+    },
+    "RandomForest": {
+      "delta": 0.26,
+      "t": 5.378,
+      "p": 0.0058
+    },
+    "MLP": {
+      "delta": -1.74,
+      "t": -5.08,
+      "p": 0.0071
+    }
+  },
+  "deployment_ppv": {
+    "key_fpr_pct": 11.47,
+    "prior": 0.0001,
+    "ppv_pct": 0.084
+  }
+}

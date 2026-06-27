@@ -1,0 +1,90 @@
+{
+  "module": "Module C (pyaes)",
+  "library": "pyaes",
+  "ground_truth_keys": [
+    {
+      "id": "k1",
+      "algo": "AES-128-CTR",
+      "value_hex": "2e64f9d2b53d2b11b0ee8924f0110423",
+      "len": 16,
+      "kind": "secret"
+    },
+    {
+      "id": "k2",
+      "algo": "AES-192-CTR",
+      "value_hex": "40ba43d4ddd6eb29d510f4a77863e99eb7c5ccb328ad19c2",
+      "len": 24,
+      "kind": "secret"
+    },
+    {
+      "id": "k3",
+      "algo": "AES-256-CTR",
+      "value_hex": "a80b76c79fc605316716504a1e99c789b71c740657ebbad0209798e2b2bb71f3",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k4",
+      "algo": "AES-128-CBC",
+      "value_hex": "3781038d5b0fa9bff6773dddd5ee319c",
+      "len": 16,
+      "kind": "secret"
+    },
+    {
+      "id": "k5",
+      "algo": "AES-192-CBC",
+      "value_hex": "1f98cf07063efd9bc49e0d1bf7f37ccef9e54ef8a3e14070",
+      "len": 24,
+      "kind": "secret"
+    },
+    {
+      "id": "k6",
+      "algo": "AES-256-CBC",
+      "value_hex": "2d2514668e4a9af99d57c739b91e7b2151d30de9c4fdd8417afccfc7a9683481",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k7",
+      "algo": "AES-128-CTR",
+      "value_hex": "0d275a81febd5fd290c312c274d16975",
+      "len": 16,
+      "kind": "secret"
+    },
+    {
+      "id": "k8",
+      "algo": "AES-192-CTR",
+      "value_hex": "aec27c2215006fca621f3bd4e51bf5c4a00427400db65af9",
+      "len": 24,
+      "kind": "secret"
+    },
+    {
+      "id": "k9",
+      "algo": "AES-256-CTR",
+      "value_hex": "9e395cdd78ebe7a63560d03d15c20e3bcc059d4d4f70cb1e810f1a188ff6417d",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k10",
+      "algo": "AES-128-CBC",
+      "value_hex": "8dc16daf8cd6f97d9a510dfb22245efe",
+      "len": 16,
+      "kind": "secret"
+    },
+    {
+      "id": "k11",
+      "algo": "AES-192-CBC",
+      "value_hex": "f76ad5c8abb529b30068e84792582804ce492b7c7bfcb10d",
+      "len": 24,
+      "kind": "secret"
+    },
+    {
+      "id": "k12",
+      "algo": "AES-256-CBC",
+      "value_hex": "94c503e4cb533a5241809fab990b1e7c82e06fd28de1fc429dedde4c213835e7",
+      "len": 32,
+      "kind": "secret"
+    }
+  ]
+}

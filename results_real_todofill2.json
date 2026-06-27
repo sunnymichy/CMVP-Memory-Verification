@@ -1,0 +1,27 @@
+{
+  "mid": {
+    "n_distinct": 334,
+    "mean_per_mid": 24.3,
+    "sd_per_mid": 26.2
+  },
+  "midh_split": {
+    "n_train": 4867,
+    "n_test": 2470,
+    "train_frac": 0.6
+  },
+  "key_fpr": {
+    "fp_key": 112,
+    "nonkey_n": 881,
+    "fpr_pct": 12.7
+  },
+  "ece": {
+    "pre_pct": 1.62,
+    "post_pct": 1.39
+  },
+  "tier_hi": {
+    "frac_hi": 0.63,
+    "fpr_hi": 0.054,
+    "fp_hi": 27,
+    "hi_nonkey_n": 500
+  }
+}

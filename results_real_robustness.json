@@ -1,0 +1,37 @@
+{
+  "groupkfold_noncrypto_stratified": {
+    "WF1": [
+      79.2,
+      8.1
+    ],
+    "MF1": [
+      79.4,
+      7.2
+    ],
+    "KEYrec": [
+      81.4,
+      15.9
+    ],
+    "n_crypto_groups": 33
+  },
+  "lolo_full_WF1": {
+    "per_lib": {
+      "OpenSSL": 91.4,
+      "PyCryptodome": 91.8,
+      "Windows CNG": 61.4,
+      "PyNaCl": 56.2,
+      "pyaes": 94.6
+    },
+    "mean": 79.1
+  },
+  "lolo_contextual_ablated_WF1": {
+    "per_lib": {
+      "OpenSSL": 91.7,
+      "PyCryptodome": 91.7,
+      "Windows CNG": 61.3,
+      "PyNaCl": 56.2,
+      "pyaes": 94.6
+    },
+    "mean": 79.1
+  }
+}

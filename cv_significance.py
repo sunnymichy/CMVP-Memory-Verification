@@ -1,0 +1,130 @@
+"""
+cv_significance.py -- multi-seed cross-validation stability & significance.
+===========================================================================
+Answers "are the reported scores stable across random seeds, and is CatBoost's edge
+significant?" using ONLY the released corpus CSV (no field data needed).
+
+For each seed it runs 5-fold stratified CV for the deployed CatBoost and for XGBoost,
+records weighted-F1 and binary KEY-F1, then reports:
+  * mean +/- std and a 95% normal CI across all (seed x fold) scores;
+  * a paired t-test (CatBoost vs XGBoost) over matched folds.
+It writes cv_significance.tex (Table tab:cvsig). No number is hard-coded; paste the
+printed values / \input the .tex into the manuscript after running.
+
+USAGE
+-----
+    python cv_significance.py --csv dataset/real_crypto_features.csv --seeds 10
+"""
+import argparse, os, sys
+import numpy as np
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "data_collector"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from feature_extractor import FEATURE_NAMES
+
+CLASSES = ["KEY", "IV", "CIPHERTEXT", "PLAINTEXT", "NON_CRYPTO"]
+
+
+def load(csv):
+    import pandas as pd
+    df = pd.read_csv(csv)
+    X = df[FEATURE_NAMES].astype(float).values
+    y = df["label"].astype(str).values
+    return X, y
+
+
+def make_catboost(seed):
+    from catboost import CatBoostClassifier
+    return CatBoostClassifier(iterations=1000, depth=9, learning_rate=0.05,
+                              loss_function="MultiClass", auto_class_weights="Balanced",
+                              random_seed=seed, verbose=False)
+
+
+def make_xgboost(seed):
+    import xgboost as xgb
+    return xgb.XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.1,
+                             random_state=seed, verbosity=0)
+
+
+def cv_scores(make_model, X, y, seed, needs_int):
+    from sklearn.model_selection import StratifiedKFold
+    from sklearn.preprocessing import LabelEncoder
+    from sklearn.metrics import f1_score
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
+    le = LabelEncoder().fit(CLASSES)
+    wf1, keyf1 = [], []
+    for tr, te in skf.split(X, y):
+        m = make_model(seed)
+        if needs_int:
+            m.fit(X[tr], le.transform(y[tr]))
+            pred = le.inverse_transform(np.asarray(m.predict(X[te])).astype(int).ravel())
+        else:
+            m.fit(X[tr], y[tr])
+            pred = np.asarray(m.predict(X[te])).ravel().astype(str)
+        wf1.append(f1_score(y[te], pred, average="weighted", zero_division=0))
+        keyf1.append(f1_score((y[te] == "KEY"), (pred == "KEY"), zero_division=0))
+    return np.array(wf1), np.array(keyf1)
+
+
+def summ(a):
+    m, s = float(np.mean(a)), float(np.std(a, ddof=1))
+    ci = 1.96 * s / np.sqrt(len(a))
+    return m, s, ci
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--csv", default="dataset/real_crypto_features.csv")
+    ap.add_argument("--seeds", type=int, default=10)
+    ap.add_argument("--tex", default="cv_significance.tex")
+    a = ap.parse_args()
+    X, y = load(a.csv)
+    print(f"corpus: {len(y)} blocks, {len(set(y))} classes; seeds={a.seeds}")
+
+    cb_w, cb_k, xg_w, xg_k = [], [], [], []
+    have_xgb = True
+    for seed in range(a.seeds):
+        w, k = cv_scores(make_catboost, X, y, seed, needs_int=True)
+        cb_w += w.tolist(); cb_k += k.tolist()
+        try:
+            w2, k2 = cv_scores(make_xgboost, X, y, seed, needs_int=True)
+            xg_w += w2.tolist(); xg_k += k2.tolist()
+        except Exception as e:
+            have_xgb = False; print(f"[warn] XGBoost skipped: {e}")
+        print(f"  seed {seed}: CatBoost W-F1 {np.mean(w)*100:.2f}  KEY-F1 {np.mean(k)*100:.2f}")
+
+    cbw = summ(np.array(cb_w)); cbk = summ(np.array(cb_k))
+    print(f"\nCatBoost  W-F1 {cbw[0]*100:.2f} +/- {cbw[1]*100:.2f} (95% CI +/-{cbw[2]*100:.2f}) "
+          f"| KEY-F1 {cbk[0]*100:.2f} +/- {cbk[1]*100:.2f}")
+    rows = [("CatBoost (deployed)", cbw, cbk)]
+    pval = None
+    if have_xgb and xg_w:
+        xgw = summ(np.array(xg_w)); xgk = summ(np.array(xg_k))
+        print(f"XGBoost   W-F1 {xgw[0]*100:.2f} +/- {xgw[1]*100:.2f} | KEY-F1 {xgk[0]*100:.2f} +/- {xgk[1]*100:.2f}")
+        rows.append(("XGBoost", xgw, xgk))
+        try:
+            from scipy.stats import ttest_rel
+            n = min(len(cb_w), len(xg_w))
+            t, pval = ttest_rel(cb_w[:n], xg_w[:n])
+            print(f"paired t-test (W-F1, CatBoost vs XGBoost): t={t:.3f}, p={pval:.4g} over {n} folds")
+        except Exception as e:
+            print(f"[warn] t-test skipped: {e}")
+
+    body = "\n".join(
+        f"{name} & {w[0]*100:.2f} $\\pm$ {w[1]*100:.2f} & {k[0]*100:.2f} $\\pm$ {k[1]*100:.2f} \\\\"
+        for name, w, k in rows)
+    cap = (f"Stability over {a.seeds} random seeds ($5$-fold CV; mean~$\\pm$~SD of weighted and KEY-class F1).")
+    if pval is not None:
+        cap += f" Paired $t$-test (weighted F1, CatBoost vs.\\ XGBoost): $p={pval:.3g}$."
+    tex = ("% Auto-generated by cv_significance.py -- VERIFY then \\input.\n"
+           "\\begin{table}[t]\\centering\\scriptsize\n"
+           f"\\caption{{{cap}}}\n\\label{{tab:cvsig}}\n"
+           "\\begin{tabular}{@{}lcc@{}}\n\\toprule\n"
+           "\\textbf{Model} & \\textbf{Weighted F1 (\\%)} & \\textbf{KEY F1 (\\%)} \\\\\n\\midrule\n"
+           f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table}}\n")
+    open(a.tex, "w", encoding="utf-8").write(tex)
+    print(f"\nWrote {a.tex}")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,87 @@
+{
+  "per_module": [
+    {
+      "module": "Module A (OpenSSL)",
+      "library": "OpenSSL",
+      "keys": 20,
+      "detected": 8,
+      "missed": 12,
+      "fp_block": 6,
+      "recall_pct": 40.0,
+      "block_precision_pct": 78.6,
+      "actionable_precision_pct": 57.1,
+      "funnel": null
+    },
+    {
+      "module": "Module B (PyCryptodome)",
+      "library": "PyCryptodome",
+      "keys": 18,
+      "detected": 12,
+      "missed": 6,
+      "fp_block": 0,
+      "recall_pct": 66.7,
+      "block_precision_pct": 100.0,
+      "actionable_precision_pct": 100.0,
+      "funnel": null
+    },
+    {
+      "module": "Module C (pyaes)",
+      "library": "pyaes",
+      "keys": 12,
+      "detected": 0,
+      "missed": 12,
+      "fp_block": 0,
+      "recall_pct": 0.0,
+      "block_precision_pct": 0.0,
+      "actionable_precision_pct": 0.0,
+      "funnel": null
+    },
+    {
+      "module": "Module D (CNG)",
+      "library": "Windows CNG",
+      "keys": 6,
+      "detected": 0,
+      "missed": 6,
+      "fp_block": 0,
+      "recall_pct": 0.0,
+      "block_precision_pct": 0.0,
+      "actionable_precision_pct": 0.0,
+      "funnel": null
+    },
+    {
+      "module": "Module E (PyNaCl)",
+      "library": "PyNaCl",
+      "keys": 10,
+      "detected": 2,
+      "missed": 8,
+      "fp_block": 1,
+      "recall_pct": 20.0,
+      "block_precision_pct": 83.3,
+      "actionable_precision_pct": 66.7,
+      "funnel": null
+    },
+    {
+      "module": "Module F (PurePy, unseen)",
+      "library": "PurePy",
+      "keys": 4,
+      "detected": 4,
+      "missed": 0,
+      "fp_block": 0,
+      "recall_pct": 100.0,
+      "block_precision_pct": 100.0,
+      "actionable_precision_pct": 100.0,
+      "funnel": null
+    }
+  ],
+  "overall": {
+    "n_modules": 6,
+    "total_keys": 70,
+    "total_detected": 26,
+    "total_missed": 44,
+    "total_fp_block": 7,
+    "recall_pct": 37.1,
+    "wilson95_lo_pct": 26.8,
+    "wilson95_hi_pct": 48.9,
+    "actionable_precision_pct": 78.8
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "module": "Module D (CNG)",
+  "library": "Windows CNG",
+  "ground_truth_keys": [
+    {
+      "id": "k1",
+      "algo": "AES-128-CBC",
+      "value_hex": "74dbbe5f0c881c9dda48d53d201c29a0",
+      "len": 16,
+      "kind": "secret"
+    },
+    {
+      "id": "k2",
+      "algo": "AES-192-CBC",
+      "value_hex": "e85d171dcd134ed1434e8b4a8069c12461d9a2c2cd52b8fd",
+      "len": 24,
+      "kind": "secret"
+    },
+    {
+      "id": "k3",
+      "algo": "AES-256-CBC",
+      "value_hex": "af81a100600b9fd3cc29c4991ea82f53d2ead80db3bec3c182c79267e0eeef0e",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k4",
+      "algo": "AES-128-CBC",
+      "value_hex": "4cbe4e4e81cec01fc5977798aad68da1",
+      "len": 16,
+      "kind": "secret"
+    },
+    {
+      "id": "k5",
+      "algo": "AES-192-CBC",
+      "value_hex": "f711a578769a6e7e6ecdad1a8dbcc441ba7f86dd84a1ac0c",
+      "len": 24,
+      "kind": "secret"
+    },
+    {
+      "id": "k6",
+      "algo": "AES-256-CBC",
+      "value_hex": "c5a57deb9ca9e0343d1ce652406d3cb45572c1e177a2b7673faf563858ba72b9",
+      "len": 32,
+      "kind": "secret"
+    }
+  ],
+  "predicted_key_blocks": []
+}

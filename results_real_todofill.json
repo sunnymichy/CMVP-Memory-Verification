@@ -1,0 +1,51 @@
+{
+  "n_total": 8112,
+  "groupkfold": {
+    "WF1_mean": 71.21,
+    "WF1_sd": 10.89,
+    "MF1_mean": 65.04,
+    "MF1_sd": 10.06,
+    "KEYrec_mean": 82.12,
+    "KEYrec_sd": 21.05,
+    "n_groups": 35
+  },
+  "binary_key_test": {
+    "n_test": 1623,
+    "AESKeyFind_all": {
+      "prec": 0.0,
+      "rec": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 742
+    },
+    "XGBoost_all": {
+      "prec": 86.4,
+      "rec": 96.1,
+      "f1": 91.0,
+      "tp": 713,
+      "fp": 112,
+      "fn": 29
+    },
+    "AESKeyFind_nonAES": {
+      "prec": 0.0,
+      "rec": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 167
+    },
+    "XGBoost_nonAES": {
+      "prec": 72.6,
+      "rec": 100.0,
+      "f1": 84.1,
+      "tp": 167,
+      "fp": 63,
+      "fn": 0
+    },
+    "n_nonAES": 525
+  },
+  "field_block_precision_pct": 78.8,
+  "field_tp_blocks": 26,
+  "field_fp_blocks": 7
+}

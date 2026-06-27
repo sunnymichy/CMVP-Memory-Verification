@@ -1,0 +1,76 @@
+{
+  "module": "Module E (PyNaCl)",
+  "library": "PyNaCl",
+  "ground_truth_keys": [
+    {
+      "id": "k1",
+      "algo": "XSalsa20-Poly1305",
+      "value_hex": "6f7feb3962edf5dc8111f1895ef7234cf585edaca517e34be9998f4ac1e15939",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k2",
+      "algo": "Curve25519-XSalsa20",
+      "value_hex": "d5c9873c64dfa951062187af188a07d074a96629e602de8db3a58cefb0c12011",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k3",
+      "algo": "Ed25519",
+      "value_hex": "a63d06af47051b42c38cb5284b3689e306094ce99d41ccf3bfa2fbcfb1886448",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k4",
+      "algo": "Curve25519-Box",
+      "value_hex": "a8e204bc4d41132715f1340568f72dfd8be89a6565b2c180acb495c4f829e737",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k5",
+      "algo": "BLAKE2b",
+      "value_hex": "cf4022c9b404b8c87eb66f054e7909f1e458c900990b5e4486f76cf8b46bf6a7",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k6",
+      "algo": "XSalsa20-Poly1305",
+      "value_hex": "ee9b740fcc768d534ad90537ad2247bf054fcc1d13fd800c7a8ba03040e5a708",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k7",
+      "algo": "Curve25519-XSalsa20",
+      "value_hex": "2b84b967a8b2fbd003695f25a568f4a52b8db6a499855f43fd886d14aa535e67",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k8",
+      "algo": "Ed25519",
+      "value_hex": "2b0e56d0d5e11d8fd1b30a8388bc94b0c690ba1503929c78316e757ef35776fa",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k9",
+      "algo": "Curve25519-Box",
+      "value_hex": "79967f79a95cc63ee79d1bda7443edc4ddc8df76b859dff2dddaea9b531b34aa",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k10",
+      "algo": "BLAKE2b",
+      "value_hex": "50d443bf3c51d52e77b67be51cc514e24a993e671f1221f7ecde3ab9d3b0a9aa",
+      "len": 32,
+      "kind": "secret"
+    }
+  ]
+}

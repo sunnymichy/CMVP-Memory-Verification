@@ -1,0 +1,103 @@
+{
+  "n_total": 8112,
+  "groupkfold": {
+    "n_crypto_groups": 33,
+    "WF1": [
+      79.0,
+      7.9
+    ],
+    "MF1": [
+      79.2,
+      7.1
+    ],
+    "KEYrec": [
+      81.5,
+      15.8
+    ]
+  },
+  "lolo_contextual_ablated_WF1": {
+    "per_lib": {
+      "OpenSSL": 91.7,
+      "PyCryptodome": 91.7,
+      "Windows CNG": 61.3,
+      "PyNaCl": 56.2,
+      "pyaes": 94.6
+    },
+    "mean": 79.1
+  },
+  "lolo_detail": {
+    "OpenSSL": {
+      "WF1": 91.4,
+      "MF1": 91.1,
+      "KEYrec": 86.8
+    },
+    "PyCryptodome": {
+      "WF1": 91.8,
+      "MF1": 72.3,
+      "KEYrec": 93.8
+    },
+    "Windows CNG": {
+      "WF1": 61.4,
+      "MF1": 34.7,
+      "KEYrec": 88.1
+    },
+    "PyNaCl": {
+      "WF1": 56.2,
+      "MF1": 35.3,
+      "KEYrec": 99.8
+    },
+    "pyaes": {
+      "WF1": 94.6,
+      "MF1": 94.9,
+      "KEYrec": 88.8
+    }
+  },
+  "mid": {
+    "n_distinct": 334,
+    "mean": 24.3,
+    "sd": 26.2
+  },
+  "midh_split": {
+    "n_train": 4867,
+    "n_test": 2470
+  },
+  "ece": {
+    "pre": 1.62,
+    "post": 1.39
+  },
+  "tier_hi": {
+    "frac": 0.63,
+    "fpr_hi": 0.054
+  },
+  "aeskeyfind": {
+    "AESKeyFind_all": {
+      "prec": 0.0,
+      "rec": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0
+    },
+    "XGB_all": {
+      "prec": 86.4,
+      "rec": 96.1,
+      "f1": 91.0,
+      "tp": 713,
+      "fp": 112
+    },
+    "XGB_nonAES": {
+      "prec": 72.6,
+      "rec": 100.0,
+      "f1": 84.1,
+      "tp": 167,
+      "fp": 63
+    },
+    "AESKeyFind_nonAES": {
+      "prec": 0.0,
+      "rec": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0
+    }
+  },
+  "field_block_prec_pct": 78.8
+}

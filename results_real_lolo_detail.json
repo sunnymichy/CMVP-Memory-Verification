@@ -1,0 +1,14 @@
+{
+  "_note": "Per-library LOLO detail (XGBoost deployed config; same as run_pathB single-split/cv5). Computed by lolo_detail.py over real_crypto_features.csv. W-F1 column matches results_real.json lolo.XGBoost.per_library exactly, validating the setup; M-F1 and KEY-recall columns are added here (results_real.json lolo stores only W-F1). Supports Table 11.",
+  "model": "XGBoost (n_estimators=200, max_depth=6, lr=0.1, multi:softprob, seed=42)",
+  "per_library": {
+    "OpenSSL":      {"WF1": 91.4, "MF1": 91.1, "KEYrec": 86.8, "n_test": 1369},
+    "PyCryptodome": {"WF1": 91.8, "MF1": 72.3, "KEYrec": 93.8, "n_test": 1382},
+    "Windows CNG":  {"WF1": 61.4, "MF1": 34.7, "KEYrec": 88.1, "n_test": 1699},
+    "PyNaCl":       {"WF1": 56.2, "MF1": 35.3, "KEYrec": 99.8, "n_test": 1560},
+    "pyaes":        {"WF1": 94.6, "MF1": 94.9, "KEYrec": 88.8, "n_test": 1440}
+  },
+  "mean": {"WF1": 79.1, "MF1": 65.7, "KEYrec": 91.5},
+  "sd":   {"WF1": 18.6, "MF1": 29.3, "KEYrec": 5.4},
+  "all_held_out_mean_WF1_incl_pseudolibs": 64.0
+}

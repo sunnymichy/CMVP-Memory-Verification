@@ -1,0 +1,126 @@
+{
+  "module": "Module E (PyNaCl)",
+  "library": "PyNaCl",
+  "ground_truth_keys": [
+    {
+      "id": "k1",
+      "algo": "XSalsa20-Poly1305",
+      "value_hex": "e9c5804ff1445ac7108cb55f0e3904bb1a953b0ef9a401fb80743605b212cd96",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k2",
+      "algo": "Curve25519-XSalsa20",
+      "value_hex": "71ba93e20ee67439cf0143c48c4a792b0e121302d7121be13244da93344a7712",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k3",
+      "algo": "Ed25519",
+      "value_hex": "59e743f7dd0d89e2e38f2ea9214f6afec52cf8cb11c1f38ad999320251204c40",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k4",
+      "algo": "Curve25519-Box",
+      "value_hex": "c543aac91cf62a427f665e1a04daf80dcd1dee6627e5d4fa2020cc345dab4312",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k5",
+      "algo": "BLAKE2b",
+      "value_hex": "ac53307fbeba6301456592d3daef69ca2350cb672ef328319b3e7a4f9e152394",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k6",
+      "algo": "XSalsa20-Poly1305",
+      "value_hex": "82bfa951c7302ae4c4ccb6b8c95f48bb9f8b07b93df8feaecac0030a3d47d6b5",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k7",
+      "algo": "Curve25519-XSalsa20",
+      "value_hex": "8279dfe673f2e13932e7dbbc86a614c2d843dde6b5961126f6f3be09116ffcff",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k8",
+      "algo": "Ed25519",
+      "value_hex": "9278bc9f29bb00f793c3626c5bfbb81f15e22bc93bef9f9cdcbba717dc47f304",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k9",
+      "algo": "Curve25519-Box",
+      "value_hex": "c25e2c41a8668f7307ad1cee2e852642dc6603342d54a695df29c615bba5df37",
+      "len": 32,
+      "kind": "secret"
+    },
+    {
+      "id": "k10",
+      "algo": "BLAKE2b",
+      "value_hex": "b36272a7b6d26f8af7d8160569f8a82fd6aef45780570f8b667ea98e5aa4fe39",
+      "len": 32,
+      "kind": "secret"
+    }
+  ],
+  "predicted_key_blocks": [
+    {
+      "addr": "0x28f6c6efa80",
+      "value_hex": "9278bc9f29bb00f793c3626c5bfbb81f15e22bc93bef9f9cdcbba717dc47f304",
+      "region": 2,
+      "type": "Ed25519",
+      "verified": true,
+      "confidence": 1.0
+    },
+    {
+      "addr": "0x28f6c7c0bd0",
+      "value_hex": "8279dfe673f2e13932e7dbbc86a614c2d843dde6b5961126f6f3be09116ffcff",
+      "region": 2,
+      "type": "X25519",
+      "verified": true,
+      "confidence": 1.0
+    },
+    {
+      "addr": "0x28f6c7c0c10",
+      "value_hex": "9278bc9f29bb00f793c3626c5bfbb81f15e22bc93bef9f9cdcbba717dc47f304",
+      "region": 2,
+      "type": "Ed25519",
+      "verified": true,
+      "confidence": 1.0
+    },
+    {
+      "addr": "0x28f6c81e080",
+      "value_hex": "9e3782b52b2082f4fe59af8cdb0ad5621e66db37f513eaf26ee004731baaefc7",
+      "region": 2,
+      "type": "X25519",
+      "verified": true,
+      "confidence": 1.0
+    },
+    {
+      "addr": "0x28f6c81e530",
+      "value_hex": "8279dfe673f2e13932e7dbbc86a614c2d843dde6b5961126f6f3be09116ffcff",
+      "region": 2,
+      "type": "X25519",
+      "verified": true,
+      "confidence": 1.0
+    },
+    {
+      "addr": "0x28f6c81e620",
+      "value_hex": "9278bc9f29bb00f793c3626c5bfbb81f15e22bc93bef9f9cdcbba717dc47f304",
+      "region": 2,
+      "type": "Ed25519",
+      "verified": true,
+      "confidence": 1.0
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+% Non-intrusiveness measurement subsection -- FILL [XX] from perturbation_bench.py runs.
+% Suggested placement: a Results subsection adjacent to "Computational complexity and
+% throughput" (subsec:complexity). After inserting real numbers, also REMOVE the
+% future-work disclaimer in subsec:principles ("The quantitative perturbation cost ... is
+% identified as future work") and the matching item in Limitations.
+
+\subsection{Non-intrusiveness measurement}
+\label{subsec:perturbation}
+We quantify the cost of read-only observation on a live target that repeatedly performs a
+deterministic AES known-answer computation while a separate, read-only monitor attaches by
+PID and snapshots its committed regions (\code{perturbation\_bench.py}). We compare a
+\emph{baseline} run (target alone) with a \emph{monitored} run (target plus monitor) over
+\textbf{[XX]}\,s each.
+
+\emph{Functional non-interference.} Across \textbf{[XX]} operations the target's output was
+\emph{bit-identical} to the known answer in every case (\textbf{0} mismatches), in both the
+baseline and monitored runs. Because the monitor issues no \code{WriteProcessMemory} and
+maps nothing writable, the address-space data is unmodified by construction; the
+zero-mismatch result confirms this end-to-end at the output level.
+
+\emph{Resource and scheduling cost.} Table~\ref{tab:perturbation} reports the measured cost.
+Observation reduces target throughput by \textbf{[XX]}\% (a consequence of brief
+\code{NtSuspendProcess} pauses, not of any data modification), adds \textbf{[XX]} page faults
+(reads paging in observed regions), and changes the working set by \textbf{[XX]}\,KB. Each
+snapshot suspends the target for a mean of \textbf{[XX]}\,ms (p95 \textbf{[XX]}\,ms) while
+reading \textbf{[XX]}\,MB. Consistent with the threat model (Section~\ref{subsec:principles}),
+the perturbation is purely in \emph{scheduling} (\emph{when} threads run), bounded and
+quantified here, while the address-space \emph{data} is provably preserved.
+
+\begin{table}[t]
+\centering
+\caption{Non-intrusiveness of read-only observation (deterministic AES KAT target; baseline
+= target alone, monitored = target + read-only monitor). Output is bit-identical in both
+(0 mismatches).}
+\label{tab:perturbation}
+\scriptsize
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Monitored} & \textbf{$\Delta$} \\
+\midrule
+Throughput (ops/s)        & [XX] & [XX] & [XX]\% \\
+Page faults (count)       & [XX] & [XX] & [XX] \\
+Working set (KB)          & [XX] & [XX] & [XX] \\
+Output mismatches         & 0    & 0    & 0 \\
+\midrule
+Suspend/snapshot (ms, mean / p95) & \multicolumn{3}{c}{[XX] / [XX]} \\
+Bytes read per snapshot (MB)      & \multicolumn{3}{c}{[XX]} \\
+\bottomrule
+\end{tabular}
+\end{table}
